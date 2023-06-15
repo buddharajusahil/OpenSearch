@@ -33,6 +33,7 @@
 package org.opensearch.action.search;
 
 import org.opensearch.action.ActionListener;
+import org.opensearch.action.CoordinatorStats;
 import org.opensearch.action.OriginalIndices;
 import org.opensearch.action.admin.cluster.node.tasks.cancel.CancelTasksRequest;
 import org.opensearch.action.admin.cluster.shards.ClusterSearchShardsGroup;
@@ -69,6 +70,7 @@ import org.opensearch.common.util.concurrent.CountDown;
 import org.opensearch.core.common.Strings;
 import org.opensearch.index.Index;
 import org.opensearch.index.query.Rewriteable;
+import org.opensearch.index.shard.SearchOperationListener;
 import org.opensearch.index.shard.ShardId;
 import org.opensearch.indices.breaker.CircuitBreakerService;
 import org.opensearch.search.SearchPhaseResult;
@@ -156,7 +158,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     private final NamedWriteableRegistry namedWriteableRegistry;
     private final CircuitBreaker circuitBreaker;
     private final SearchPipelineService searchPipelineService;
-
+    final List<SearchRequestOperationsListener> searchListenersList = new ArrayList<>();
     @Inject
     public TransportSearchAction(
         NodeClient client,
@@ -170,7 +172,8 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         ActionFilters actionFilters,
         IndexNameExpressionResolver indexNameExpressionResolver,
         NamedWriteableRegistry namedWriteableRegistry,
-        SearchPipelineService searchPipelineService
+        SearchPipelineService searchPipelineService,
+        CoordinatorStats coordinatorStats
     ) {
         super(SearchAction.NAME, transportService, actionFilters, (Writeable.Reader<SearchRequest>) SearchRequest::new);
         this.client = client;
@@ -185,6 +188,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         this.indexNameExpressionResolver = indexNameExpressionResolver;
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.searchPipelineService = searchPipelineService;
+        this.searchListenersList.add(coordinatorStats.getSearchCoordinatorStats());
     }
 
     private Map<String, AliasFilter> buildPerIndexAliasFilter(
@@ -329,7 +333,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 ThreadPool threadPool,
                 SearchResponse.Clusters clusters
             ) {
-                return new AbstractSearchAsyncAction<SearchPhaseResult>(
+                AbstractSearchAsyncAction<SearchPhaseResult> returnAbstractSearchAsyncAction = new AbstractSearchAsyncAction<SearchPhaseResult>(
                     actionName,
                     logger,
                     searchTransportService,
@@ -374,6 +378,8 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         return includeSearchContext;
                     }
                 };
+                returnAbstractSearchAsyncAction.setSearchListenerList(searchListenersList);
+                return returnAbstractSearchAsyncAction;
             }
         }, listener);
     }
@@ -1219,6 +1225,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 default:
                     throw new IllegalStateException("Unknown search type: [" + searchRequest.searchType() + "]");
             }
+            searchAsyncAction.setSearchListenerList(searchListenersList);
             return searchAsyncAction;
         }
     }

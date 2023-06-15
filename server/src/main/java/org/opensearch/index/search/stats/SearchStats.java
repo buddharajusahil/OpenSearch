@@ -33,6 +33,8 @@
 package org.opensearch.index.search.stats;
 
 import org.opensearch.Version;
+import org.opensearch.action.CoordinatorStats;
+import org.opensearch.action.search.SearchCoordinatorStats;
 import org.opensearch.common.Nullable;
 import org.opensearch.common.Strings;
 import org.opensearch.common.io.stream.StreamInput;
@@ -55,6 +57,8 @@ import java.util.Map;
  * @opensearch.internal
  */
 public class SearchStats implements Writeable, ToXContentFragment {
+
+
 
     /**
      * Statistics for search
@@ -82,6 +86,10 @@ public class SearchStats implements Writeable, ToXContentFragment {
         private long pitCount;
         private long pitTimeInMillis;
         private long pitCurrent;
+
+        private final SearchCoordinatorStats searchCoordinatorStats = new SearchCoordinatorStats();
+
+
 
         private Stats() {
             // for internal use, initializes all counts to 0
@@ -322,6 +330,19 @@ public class SearchStats implements Writeable, ToXContentFragment {
             builder.humanReadableField(Fields.SUGGEST_TIME_IN_MILLIS, Fields.SUGGEST_TIME, getSuggestTime());
             builder.field(Fields.SUGGEST_CURRENT, suggestCurrent);
 
+
+            builder.startObject(Fields.COORDINATOR);
+            builder.humanReadableField(Fields.QUERY_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getQueryMetric()));
+            builder.field(Fields.QUERY_CURRENT, searchCoordinatorStats.getQueryCurrent());
+            builder.field(Fields.QUERY_TOTAL, searchCoordinatorStats.getQueryTotal());
+            builder.humanReadableField(Fields.FETCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getFetchMetric()));
+            builder.field(Fields.FETCH_CURRENT, searchCoordinatorStats.getFetchCurrent());
+            builder.field(Fields.FETCH_TOTAL, searchCoordinatorStats.getFetchTotal());
+            builder.humanReadableField(Fields.EXPANDSEARCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getExpandSearchMetric()));
+            builder.field(Fields.EXPANDSEARCH_CURRENT, searchCoordinatorStats.getExpandSearchCurrent());
+            builder.field(Fields.EXPANDSEARCH_TOTAL, searchCoordinatorStats.getExpandSearchTotal());
+            builder.endObject();
+
             return builder;
         }
     }
@@ -334,6 +355,11 @@ public class SearchStats implements Writeable, ToXContentFragment {
 
     public SearchStats() {
         totalStats = new Stats();
+    }
+
+    // Set the different Coordinator Stats fields in here
+    public void addCoordinatorStats(CoordinatorStats coordinatorStats) {
+        totalStats.searchCoordinatorStats.setStats(coordinatorStats.searchCoordinatorStats);
     }
 
     public SearchStats(Stats totalStats, long openContexts, @Nullable Map<String, Stats> groupStats) {
@@ -446,6 +472,10 @@ public class SearchStats implements Writeable, ToXContentFragment {
         static final String SUGGEST_TIME = "suggest_time";
         static final String SUGGEST_TIME_IN_MILLIS = "suggest_time_in_millis";
         static final String SUGGEST_CURRENT = "suggest_current";
+        static final String COORDINATOR = "coordinator";
+        static final String EXPANDSEARCH_TIME_IN_MILLIS = "expandsearch_time_in_millis";
+        static final String EXPANDSEARCH_CURRENT = "expandsearch_current";
+        static final String EXPANDSEARCH_TOTAL= "expandsearch_current";
     }
 
     @Override

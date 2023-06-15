@@ -32,6 +32,7 @@
 
 package org.opensearch.indices;
 
+import org.opensearch.action.CoordinatorStats;
 import org.opensearch.action.admin.indices.stats.CommonStats;
 import org.opensearch.action.admin.indices.stats.IndexShardStats;
 import org.opensearch.action.admin.indices.stats.ShardStats;
@@ -58,6 +59,7 @@ import org.opensearch.index.store.StoreStats;
 import org.opensearch.index.translog.TranslogStats;
 import org.opensearch.index.warmer.WarmerStats;
 import org.opensearch.search.suggest.completion.CompletionStats;
+import org.opensearch.action.search.SearchCoordinatorStats;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,7 +73,6 @@ import java.util.Map;
  * @opensearch.internal
  */
 public class NodeIndicesStats implements Writeable, ToXContentFragment {
-
     private CommonStats stats;
     private Map<Index, List<IndexShardStats>> statsByShard;
 
@@ -92,7 +93,7 @@ public class NodeIndicesStats implements Writeable, ToXContentFragment {
         }
     }
 
-    public NodeIndicesStats(CommonStats oldStats, Map<Index, List<IndexShardStats>> statsByShard) {
+    public NodeIndicesStats(CommonStats oldStats, Map<Index, List<IndexShardStats>> statsByShard, CoordinatorStats coordinatorStats) {
         // this.stats = stats;
         this.statsByShard = statsByShard;
 
@@ -105,6 +106,8 @@ public class NodeIndicesStats implements Writeable, ToXContentFragment {
                 }
             }
         }
+        this.stats.addCoordinatorStats(coordinatorStats);
+
     }
 
     @Nullable

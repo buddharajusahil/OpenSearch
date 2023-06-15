@@ -106,7 +106,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private final AtomicInteger skippedOps = new AtomicInteger();
     private final TransportSearchAction.SearchTimeProvider timeProvider;
     private final SearchResponse.Clusters clusters;
-
     protected final GroupShardsIterator<SearchShardIterator> toSkipShardsIts;
     protected final GroupShardsIterator<SearchShardIterator> shardsIts;
     private final int expectedTotalOps;
@@ -115,7 +114,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private final Map<String, PendingExecutions> pendingExecutionsPerNode = new ConcurrentHashMap<>();
     private final boolean throttleConcurrentRequests;
 
+    private SearchPhase currentPhase;
+
     private final List<Releasable> releasables = new ArrayList<>();
+
+    private SearchRequestOperationsListener searchRequestOperationsListener;
+    private List<SearchRequestOperationsListener> searchListenersList;
 
     AbstractSearchAsyncAction(
         String name,
@@ -170,6 +174,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         this.indexRoutings = indexRoutings;
         this.results = resultConsumer;
         this.clusters = clusters;
+
+    }
+
+    public void setSearchListenerList (List<SearchRequestOperationsListener> searchListenersList) {
+        this.searchListenersList = searchListenersList;
+        this.searchRequestOperationsListener = new SearchRequestOperationsListener.CompositeListener(this.searchListenersList, logger);
     }
 
     @Override
@@ -370,6 +380,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 : BaseOpenSearchException.guessRootCauses(shardSearchFailures[0].getCause())[0];
             logger.debug(() -> new ParameterizedMessage("All shards failed for phase: [{}]", getName()), cause);
             onPhaseFailure(currentPhase, "all shards failed", cause);
+            contactListenerForEnd(this, searchRequestOperationsListener);
         } else {
             Boolean allowPartialResults = request.allowPartialSearchResults();
             assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
@@ -418,12 +429,44 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                     clusterState.version()
                 );
             }
+            contactListenerForEnd(this, searchRequestOperationsListener);
             executePhase(nextPhase);
         }
     }
 
+    private void contactListenerForEnd (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseEnd(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseEnd(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseEnd(this);
+        }
+    }
+    private void contactListenerForStart (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseStart(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseStart(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseStart(this);
+        }
+    }
+    private void contactListenerForFailure (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseFailure(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseFailure(this);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseFailure(this);
+        }
+    }
+
+
     private void executePhase(SearchPhase phase) {
         try {
+            setCurrentPhase(phase);
+            contactListenerForStart(this, searchRequestOperationsListener);
             phase.run();
         } catch (Exception e) {
             if (logger.isDebugEnabled()) {
@@ -590,6 +633,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         }
     }
 
+    public SearchPhase getCurrentPhase() { return currentPhase; }
+    public void setCurrentPhase(SearchPhase phase) { currentPhase = phase; }
     @Override
     public final int getNumShards() {
         return results.getNumShards();
@@ -657,6 +702,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             }
             listener.onResponse(buildSearchResponse(internalSearchResponse, failures, scrollId, searchContextId));
         }
+        contactListenerForEnd(this, searchRequestOperationsListener);
+        setCurrentPhase(null);
     }
 
     @Override

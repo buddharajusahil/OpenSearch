@@ -36,6 +36,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.Constants;
 import org.opensearch.ExceptionsHelper;
+import org.opensearch.action.CoordinatorStats;
+import org.opensearch.action.search.SearchCoordinatorStats;
+import org.opensearch.action.search.SearchRequestOperationsListener;
 import org.opensearch.common.SetOnce;
 import org.opensearch.common.settings.SettingsException;
 import org.opensearch.common.unit.ByteSizeUnit;
@@ -44,6 +47,7 @@ import org.opensearch.common.util.FeatureFlags;
 import org.opensearch.cluster.routing.allocation.AwarenessReplicaBalance;
 import org.opensearch.index.IndexModule;
 import org.opensearch.index.IndexingPressureService;
+import org.opensearch.index.shard.SearchOperationListener;
 import org.opensearch.index.store.remote.filecache.FileCache;
 import org.opensearch.index.store.remote.filecache.FileCacheCleaner;
 import org.opensearch.index.store.remote.filecache.FileCacheFactory;
@@ -711,6 +715,8 @@ public class Node implements Closeable {
                 repositoriesServiceReference::get
             );
 
+            final CoordinatorStats coordinatorStats = new CoordinatorStats();
+
             final IndicesService indicesService = new IndicesService(
                 settings,
                 pluginsService,
@@ -734,7 +740,8 @@ public class Node implements Closeable {
                 recoveryStateFactories,
                 remoteDirectoryFactory,
                 repositoriesServiceReference::get,
-                fileCacheCleaner
+                fileCacheCleaner,
+                coordinatorStats
             );
 
             final AliasValidator aliasValidator = new AliasValidator();
@@ -1112,6 +1119,7 @@ public class Node implements Closeable {
                 b.bind(FsHealthService.class).toInstance(fsHealthService);
                 b.bind(SystemIndices.class).toInstance(systemIndices);
                 b.bind(IdentityService.class).toInstance(identityService);
+                b.bind(CoordinatorStats.class).toInstance(coordinatorStats);
             });
             injector = modules.createInjector();
 
