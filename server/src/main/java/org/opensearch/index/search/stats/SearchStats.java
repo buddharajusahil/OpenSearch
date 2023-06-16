@@ -87,9 +87,8 @@ public class SearchStats implements Writeable, ToXContentFragment {
         private long pitTimeInMillis;
         private long pitCurrent;
 
-        private final SearchCoordinatorStats searchCoordinatorStats = new SearchCoordinatorStats();
-
-
+        @Nullable
+        private SearchCoordinatorStats searchCoordinatorStats;
 
         private Stats() {
             // for internal use, initializes all counts to 0
@@ -154,6 +153,19 @@ public class SearchStats implements Writeable, ToXContentFragment {
                 pitCount = in.readVLong();
                 pitTimeInMillis = in.readVLong();
                 pitCurrent = in.readVLong();
+            }
+
+            if (in.getVersion().onOrAfter(Version.V_2_0_0)) {
+                this.searchCoordinatorStats = new SearchCoordinatorStats();
+                this.searchCoordinatorStats.totalStats.queryMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.queryCurrent.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.queryTotal.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.fetchMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.fetchCurrent.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.fetchTotal.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.expandSearchMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.expandSearchCurrent.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.expandSearchTotal.setCount(in.readVLong());
             }
         }
 
@@ -306,6 +318,18 @@ public class SearchStats implements Writeable, ToXContentFragment {
                 out.writeVLong(pitTimeInMillis);
                 out.writeVLong(pitCurrent);
             }
+
+            if (out.getVersion().onOrAfter(Version.V_2_0_0)) {
+                out.writeVLong(this.searchCoordinatorStats.totalStats.queryMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.queryCurrent.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.queryTotal.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.fetchMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.fetchCurrent.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.fetchTotal.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchCurrent.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchTotal.count());
+            }
         }
 
         @Override
@@ -330,19 +354,19 @@ public class SearchStats implements Writeable, ToXContentFragment {
             builder.humanReadableField(Fields.SUGGEST_TIME_IN_MILLIS, Fields.SUGGEST_TIME, getSuggestTime());
             builder.field(Fields.SUGGEST_CURRENT, suggestCurrent);
 
-
-            builder.startObject(Fields.COORDINATOR);
-            builder.humanReadableField(Fields.QUERY_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getQueryMetric()));
-            builder.field(Fields.QUERY_CURRENT, searchCoordinatorStats.getQueryCurrent());
-            builder.field(Fields.QUERY_TOTAL, searchCoordinatorStats.getQueryTotal());
-            builder.humanReadableField(Fields.FETCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getFetchMetric()));
-            builder.field(Fields.FETCH_CURRENT, searchCoordinatorStats.getFetchCurrent());
-            builder.field(Fields.FETCH_TOTAL, searchCoordinatorStats.getFetchTotal());
-            builder.humanReadableField(Fields.EXPANDSEARCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getExpandSearchMetric()));
-            builder.field(Fields.EXPANDSEARCH_CURRENT, searchCoordinatorStats.getExpandSearchCurrent());
-            builder.field(Fields.EXPANDSEARCH_TOTAL, searchCoordinatorStats.getExpandSearchTotal());
-            builder.endObject();
-
+            if (searchCoordinatorStats != null) {
+                builder.startObject(Fields.COORDINATOR);
+                builder.humanReadableField(Fields.QUERY_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getQueryMetric()));
+                builder.field(Fields.QUERY_CURRENT, searchCoordinatorStats.getQueryCurrent());
+                builder.field(Fields.QUERY_TOTAL, searchCoordinatorStats.getQueryTotal());
+                builder.humanReadableField(Fields.FETCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getFetchMetric()));
+                builder.field(Fields.FETCH_CURRENT, searchCoordinatorStats.getFetchCurrent());
+                builder.field(Fields.FETCH_TOTAL, searchCoordinatorStats.getFetchTotal());
+                builder.humanReadableField(Fields.EXPAND_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getExpandSearchMetric()));
+                builder.field(Fields.EXPAND_CURRENT, searchCoordinatorStats.getExpandSearchCurrent());
+                builder.field(Fields.EXPAND_TOTAL, searchCoordinatorStats.getExpandSearchTotal());
+                builder.endObject();
+            }
             return builder;
         }
     }
@@ -358,8 +382,11 @@ public class SearchStats implements Writeable, ToXContentFragment {
     }
 
     // Set the different Coordinator Stats fields in here
-    public void addCoordinatorStats(CoordinatorStats coordinatorStats) {
-        totalStats.searchCoordinatorStats.setStats(coordinatorStats.searchCoordinatorStats);
+    public void addSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
+        if (searchCoordinatorStats == null) {
+            searchCoordinatorStats = new SearchCoordinatorStats();
+        }
+        totalStats.searchCoordinatorStats.setStats(searchCoordinatorStats);
     }
 
     public SearchStats(Stats totalStats, long openContexts, @Nullable Map<String, Stats> groupStats) {
@@ -473,9 +500,9 @@ public class SearchStats implements Writeable, ToXContentFragment {
         static final String SUGGEST_TIME_IN_MILLIS = "suggest_time_in_millis";
         static final String SUGGEST_CURRENT = "suggest_current";
         static final String COORDINATOR = "coordinator";
-        static final String EXPANDSEARCH_TIME_IN_MILLIS = "expandsearch_time_in_millis";
-        static final String EXPANDSEARCH_CURRENT = "expandsearch_current";
-        static final String EXPANDSEARCH_TOTAL= "expandsearch_current";
+        static final String EXPAND_TIME_IN_MILLIS = "expand_time_in_millis";
+        static final String EXPAND_CURRENT = "expand_current";
+        static final String EXPAND_TOTAL= "expand_current";
     }
 
     @Override

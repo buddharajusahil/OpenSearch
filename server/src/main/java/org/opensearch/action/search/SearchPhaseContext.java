@@ -74,7 +74,6 @@ interface SearchPhaseContext extends Executor {
     SearchRequest getRequest();
 
     SearchPhase getCurrentPhase();
-    void setCurrentPhase(SearchPhase phase);
 
     /**
      * Builds and sends the final search response back to the user.

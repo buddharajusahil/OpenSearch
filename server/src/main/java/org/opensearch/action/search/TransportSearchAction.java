@@ -173,7 +173,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         IndexNameExpressionResolver indexNameExpressionResolver,
         NamedWriteableRegistry namedWriteableRegistry,
         SearchPipelineService searchPipelineService,
-        CoordinatorStats coordinatorStats
+        SearchCoordinatorStats searchCoordinatorStats
     ) {
         super(SearchAction.NAME, transportService, actionFilters, (Writeable.Reader<SearchRequest>) SearchRequest::new);
         this.client = client;
@@ -188,7 +188,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         this.indexNameExpressionResolver = indexNameExpressionResolver;
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.searchPipelineService = searchPipelineService;
-        this.searchListenersList.add(coordinatorStats.getSearchCoordinatorStats());
+        this.searchListenersList.add(searchCoordinatorStats);
     }
 
     private Map<String, AliasFilter> buildPerIndexAliasFilter(

@@ -10,6 +10,7 @@ package org.opensearch.action.search;
 
 import org.opensearch.common.inject.Inject;
 import org.opensearch.common.metrics.CounterMetric;
+import org.opensearch.common.metrics.MeanMetric;
 
 /**
  * Coordinator level search stats
@@ -17,12 +18,11 @@ import org.opensearch.common.metrics.CounterMetric;
  * @opensearch.internal
  */
 public final class SearchCoordinatorStats implements SearchRequestOperationsListener {
-    private StatsHolder totalStats = new StatsHolder();
+    public StatsHolder totalStats = new StatsHolder();
 
     // private final CounterMetric openContexts = new CounterMetric();
 
     // private volatile Map<String, StatsHolder> groupStats = emptyMap();
-
     private long queryPhaseStart;
     private long queryPhaseEnd;
     private long fetchPhaseStart;
@@ -150,14 +150,14 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
        totalStats.expandSearchMetric.inc(expandSearchTotal);
     }
 
-    static final class StatsHolder {
-        public CounterMetric queryMetric = new CounterMetric();
+    public static final class StatsHolder {
+        public MeanMetric queryMetric = new MeanMetric();
         public CounterMetric queryCurrent = new CounterMetric();
         public CounterMetric queryTotal = new CounterMetric();
-        public CounterMetric fetchMetric = new CounterMetric();
+        public MeanMetric fetchMetric = new MeanMetric();
         public CounterMetric fetchCurrent = new CounterMetric();
         public CounterMetric fetchTotal = new CounterMetric();
-        public CounterMetric expandSearchMetric = new CounterMetric();
+        public MeanMetric expandSearchMetric = new MeanMetric();
         public CounterMetric expandSearchCurrent = new CounterMetric();
         public CounterMetric expandSearchTotal = new CounterMetric();
     }

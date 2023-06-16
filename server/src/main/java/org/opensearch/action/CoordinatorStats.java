@@ -16,7 +16,12 @@ import org.opensearch.action.search.SearchCoordinatorStats;
  * @opensearch.internal
  */
 public final class CoordinatorStats {
-    public SearchCoordinatorStats searchCoordinatorStats = new SearchCoordinatorStats();
+
+
+    public SearchCoordinatorStats searchCoordinatorStats;
+    public CoordinatorStats () {
+        searchCoordinatorStats = new SearchCoordinatorStats();
+    }
     public SearchCoordinatorStats getSearchCoordinatorStats() {
         return searchCoordinatorStats;
     }

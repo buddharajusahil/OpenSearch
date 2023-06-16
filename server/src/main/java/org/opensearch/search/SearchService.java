@@ -584,7 +584,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
             SearchContext context = createContext(readerContext, request, task, true)
         ) {
             final long afterQueryTime;
-            try (SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context)) {
+            try ( SearchOperationListenerExecutor executor = new SearchOperationListenerExecutor(context)) {
                 loadOrExecuteQueryPhase(request, context);
                 if (context.queryResult().hasSearchContext() == false && readerContext.singleSession()) {
                     freeReaderContext(readerContext.id());

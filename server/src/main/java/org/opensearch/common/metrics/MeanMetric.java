@@ -74,4 +74,9 @@ public class MeanMetric implements Metric {
         counter.reset();
         sum.reset();
     }
+
+    public void setCount (long newCount) {
+        counter.reset();
+        counter.add(newCount);
+    }
 }

@@ -380,7 +380,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 : BaseOpenSearchException.guessRootCauses(shardSearchFailures[0].getCause())[0];
             logger.debug(() -> new ParameterizedMessage("All shards failed for phase: [{}]", getName()), cause);
             onPhaseFailure(currentPhase, "all shards failed", cause);
-            contactListenerForEnd(this, searchRequestOperationsListener);
+            contactListenerForFailure(this, searchRequestOperationsListener);
+
         } else {
             Boolean allowPartialResults = request.allowPartialSearchResults();
             assert allowPartialResults != null : "SearchRequest missing setting for allowPartialSearchResults";
