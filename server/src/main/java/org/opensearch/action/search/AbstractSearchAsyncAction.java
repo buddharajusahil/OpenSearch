@@ -439,7 +439,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private void contactListenerForEnd() {
-        searchOperationListenerExecutor.close();
+        searchOperationListenerExecutor.end();
     }
     private void contactListenerForStart (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
         searchOperationListenerExecutor = new SearchOperationListenerExecutor(searchPhaseContext, searchRequestOperationsListener);
@@ -856,7 +856,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         }
     }
 
-    private static final class SearchOperationListenerExecutor implements AutoCloseable {
+    private static final class SearchOperationListenerExecutor {
         private final SearchRequestOperationsListener listener;
         private final SearchPhaseContext searchPhaseContext;
 
@@ -879,8 +879,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             }
         }
 
-        @Override
-        public void close() {
+        public void end() {
             endTime = System.nanoTime();
             tookTime = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
             if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
