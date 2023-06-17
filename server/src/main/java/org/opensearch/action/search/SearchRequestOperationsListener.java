@@ -45,13 +45,13 @@ public interface SearchRequestOperationsListener {
      */
     void onQueryPhaseStart();
     void onQueryPhaseFailure();
-    void onQueryPhaseEnd();
+    void onQueryPhaseEnd(long tookTime);
     void onFetchPhaseStart();
     void onFetchPhaseFailure();
-    void onFetchPhaseEnd();
+    void onFetchPhaseEnd(long tookTime);
     void onExpandSearchPhaseStart();
     void onExpandSearchPhaseFailure();
-    void onExpandSearchPhaseEnd();
+    void onExpandSearchPhaseEnd(long tookTime);
     void addQueryTotal(long queryTotal);
     void addFetchTotal(long fetchTotal);
     void addExpandSearchTotal(long expandSearchTotal);
@@ -88,13 +88,12 @@ public interface SearchRequestOperationsListener {
             }
         }
         @Override
-        public void onQueryPhaseEnd() {
+        public void onQueryPhaseEnd(long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
                 try {
                     queryPhaseEnd = System.nanoTime();
                     queryTotal = TimeUnit.NANOSECONDS.toMillis(queryPhaseEnd - queryPhaseStart);
-                    listener.onQueryPhaseEnd();
-                    listener.addQueryTotal(queryTotal);
+                    listener.onQueryPhaseEnd(tookTime);
                 } catch (Exception e) {
                     logger.warn(() -> new ParameterizedMessage("onPhaseEnd listener [{}] failed", listener), e);
                 }
@@ -122,13 +121,12 @@ public interface SearchRequestOperationsListener {
             }
         }
         @Override
-        public void onFetchPhaseEnd() {
+        public void onFetchPhaseEnd(long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
                 try {
                     fetchPhaseEnd = System.nanoTime();
                     fetchTotal = TimeUnit.NANOSECONDS.toMillis(fetchPhaseEnd - fetchPhaseStart);
-                    listener.onFetchPhaseEnd();
-                    listener.addFetchTotal(fetchTotal);
+                    listener.onFetchPhaseEnd(tookTime);
                 } catch (Exception e) {
                     logger.warn(() -> new ParameterizedMessage("onFetchEnd listener [{}] failed", listener), e);
                 }
@@ -156,13 +154,12 @@ public interface SearchRequestOperationsListener {
             }
         }
         @Override
-        public void onExpandSearchPhaseEnd() {
+        public void onExpandSearchPhaseEnd(long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
                 try {
                     expandSearchPhaseEnd = System.nanoTime();
                     expandSearchTotal = TimeUnit.NANOSECONDS.toMillis(expandSearchPhaseEnd - expandSearchPhaseStart);
-                    listener.onExpandSearchPhaseEnd();
-                    listener.addExpandSearchTotal(expandSearchTotal);
+                    listener.onExpandSearchPhaseEnd(tookTime);
                 } catch (Exception e) {
                     logger.warn(() -> new ParameterizedMessage("onExpandSearchEnd listener [{}] failed", listener), e);
                 }

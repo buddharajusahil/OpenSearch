@@ -502,7 +502,7 @@ public class SearchStats implements Writeable, ToXContentFragment {
         static final String COORDINATOR = "coordinator";
         static final String EXPAND_TIME_IN_MILLIS = "expand_time_in_millis";
         static final String EXPAND_CURRENT = "expand_current";
-        static final String EXPAND_TOTAL= "expand_current";
+        static final String EXPAND_TOTAL= "expand_total";
     }
 
     @Override

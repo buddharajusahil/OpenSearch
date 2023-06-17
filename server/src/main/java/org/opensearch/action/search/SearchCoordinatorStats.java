@@ -104,9 +104,10 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         totalStats.queryCurrent.inc();
     }
     @Override
-    public void onQueryPhaseEnd() {
+    public void onQueryPhaseEnd(long tookTime) {
         totalStats.queryCurrent.dec();
         totalStats.queryTotal.inc();
+        totalStats.queryMetric.inc(tookTime);
     }
     @Override
     public void onQueryPhaseFailure() {
@@ -117,8 +118,10 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         totalStats.fetchCurrent.inc();
     }
     @Override
-    public void onFetchPhaseEnd() {
+    public void onFetchPhaseEnd(long tookTime) {
         totalStats.fetchCurrent.dec();
+        totalStats.fetchTotal.inc();
+        totalStats.fetchMetric.inc(tookTime);
     }
     @Override
     public void onFetchPhaseFailure() {
@@ -129,9 +132,10 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         totalStats.expandSearchCurrent.inc();
     }
     @Override
-    public void onExpandSearchPhaseEnd() {
+    public void onExpandSearchPhaseEnd(long tookTime) {
         totalStats.expandSearchCurrent.dec();
         totalStats.expandSearchTotal.inc();
+        totalStats.expandSearchMetric.inc(tookTime);
     }
     @Override
     public void onExpandSearchPhaseFailure() {
