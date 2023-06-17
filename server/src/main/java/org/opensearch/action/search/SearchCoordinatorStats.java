@@ -52,7 +52,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     @Inject
     public SearchCoordinatorStats () { }
     public long getQueryMetric() {
-        return totalStats.queryMetric.count();
+        return totalStats.queryMetric.sum();
     }
     public long getQueryCurrent() {
         return totalStats.queryCurrent.count();
@@ -61,7 +61,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         return totalStats.queryTotal.count();
     }
     public long getFetchMetric() {
-        return totalStats.fetchMetric.count();
+        return totalStats.fetchMetric.sum();
     }
     public long getFetchCurrent() {
         return totalStats.fetchCurrent.count();
@@ -70,7 +70,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         return totalStats.fetchTotal.count();
     }
     public long getExpandSearchMetric() {
-        return totalStats.expandSearchMetric.count();
+        return totalStats.expandSearchMetric.sum();
     }
     public long getExpandSearchCurrent() {
         return totalStats.expandSearchCurrent.count();
@@ -89,52 +89,52 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     public void incExpandSearch() { totalStats.expandSearchTotal.inc(); }
 
     public void setStats(SearchCoordinatorStats searchCoordinatorStats) {
-        totalStats.queryMetric.inc(searchCoordinatorStats.totalStats.queryMetric.count());
+        totalStats.queryMetric.inc(searchCoordinatorStats.totalStats.queryMetric.sum());
         totalStats.queryCurrent.inc(searchCoordinatorStats.totalStats.queryCurrent.count());
         totalStats.queryTotal.inc(searchCoordinatorStats.totalStats.queryTotal.count());
-        totalStats.fetchMetric.inc(searchCoordinatorStats.totalStats.fetchMetric.count());
+        totalStats.fetchMetric.inc(searchCoordinatorStats.totalStats.fetchMetric.sum());
         totalStats.fetchCurrent.inc(searchCoordinatorStats.totalStats.fetchCurrent.count());
         totalStats.fetchTotal.inc(searchCoordinatorStats.totalStats.fetchTotal.count());
-        totalStats.expandSearchMetric.inc(searchCoordinatorStats.totalStats.expandSearchMetric.count());
+        totalStats.expandSearchMetric.inc(searchCoordinatorStats.totalStats.expandSearchMetric.sum());
         totalStats.expandSearchCurrent.inc(searchCoordinatorStats.totalStats.expandSearchCurrent.count());
         totalStats.expandSearchTotal.inc(searchCoordinatorStats.totalStats.expandSearchTotal.count());
     }
     @Override
-    public void onQueryPhaseStart(SearchPhaseContext context) {
+    public void onQueryPhaseStart() {
         totalStats.queryCurrent.inc();
     }
     @Override
-    public void onQueryPhaseEnd(SearchPhaseContext context) {
+    public void onQueryPhaseEnd() {
         totalStats.queryCurrent.dec();
         totalStats.queryTotal.inc();
     }
     @Override
-    public void onQueryPhaseFailure(SearchPhaseContext searchPhaseContext) {
+    public void onQueryPhaseFailure() {
         return;
     }
     @Override
-    public void onFetchPhaseStart(SearchPhaseContext context) {
+    public void onFetchPhaseStart() {
         totalStats.fetchCurrent.inc();
     }
     @Override
-    public void onFetchPhaseEnd(SearchPhaseContext context) {
+    public void onFetchPhaseEnd() {
         totalStats.fetchCurrent.dec();
     }
     @Override
-    public void onFetchPhaseFailure(SearchPhaseContext searchPhaseContext) {
+    public void onFetchPhaseFailure() {
         return;
     }
     @Override
-    public void onExpandSearchPhaseStart(SearchPhaseContext context) {
+    public void onExpandSearchPhaseStart() {
         totalStats.expandSearchCurrent.inc();
     }
     @Override
-    public void onExpandSearchPhaseEnd(SearchPhaseContext context) {
+    public void onExpandSearchPhaseEnd() {
         totalStats.expandSearchCurrent.dec();
         totalStats.expandSearchTotal.inc();
     }
     @Override
-    public void onExpandSearchPhaseFailure(SearchPhaseContext searchPhaseContext) {
+    public void onExpandSearchPhaseFailure() {
         return;
     }
     @Override

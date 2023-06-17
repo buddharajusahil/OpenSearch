@@ -437,29 +437,29 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     private void contactListenerForEnd (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
         if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onQueryPhaseEnd(this);
+            searchRequestOperationsListener.onQueryPhaseEnd();
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-            searchRequestOperationsListener.onFetchPhaseEnd(this);
+            searchRequestOperationsListener.onFetchPhaseEnd();
         } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-            searchRequestOperationsListener.onExpandSearchPhaseEnd(this);
+            searchRequestOperationsListener.onExpandSearchPhaseEnd();
         }
     }
     private void contactListenerForStart (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
         if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onQueryPhaseStart(this);
+            searchRequestOperationsListener.onQueryPhaseStart();
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-            searchRequestOperationsListener.onFetchPhaseStart(this);
+            searchRequestOperationsListener.onFetchPhaseStart();
         } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-            searchRequestOperationsListener.onExpandSearchPhaseStart(this);
+            searchRequestOperationsListener.onExpandSearchPhaseStart();
         }
     }
     private void contactListenerForFailure (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
         if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onQueryPhaseFailure(this);
+            searchRequestOperationsListener.onQueryPhaseFailure();
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-            searchRequestOperationsListener.onFetchPhaseFailure(this);
+            searchRequestOperationsListener.onFetchPhaseFailure();
         } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-            searchRequestOperationsListener.onExpandSearchPhaseFailure(this);
+            searchRequestOperationsListener.onExpandSearchPhaseFailure();
         }
     }
 

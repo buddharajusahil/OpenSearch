@@ -383,8 +383,8 @@ public class SearchStats implements Writeable, ToXContentFragment {
 
     // Set the different Coordinator Stats fields in here
     public void addSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
-        if (searchCoordinatorStats == null) {
-            searchCoordinatorStats = new SearchCoordinatorStats();
+        if (totalStats.searchCoordinatorStats == null) {
+            totalStats.searchCoordinatorStats = new SearchCoordinatorStats();
         }
         totalStats.searchCoordinatorStats.setStats(searchCoordinatorStats);
     }
