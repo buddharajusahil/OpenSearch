@@ -288,6 +288,9 @@ public class CommonStats implements Writeable, ToXContentFragment {
 
     // Add all Coordinator Stats to the Search Stats from here
     public void addCoordinatorStats(CoordinatorStats coordinatorStats) {
+        if (coordinatorStats == null) {
+            return;
+        }
         search.addSearchCoordinatorStats(coordinatorStats.searchCoordinatorStats);
     }
 

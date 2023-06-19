@@ -12,6 +12,8 @@ import org.opensearch.common.inject.Inject;
 import org.opensearch.common.metrics.CounterMetric;
 import org.opensearch.common.metrics.MeanMetric;
 
+import java.util.function.Consumer;
+
 /**
  * Coordinator level search stats
  *
@@ -78,15 +80,6 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     public long getExpandSearchTotal() {
         return totalStats.expandSearchTotal.count();
     }
-    public void incQueryCurrent() { totalStats.queryCurrent.inc(); }
-    public void decQueryCurrent() { totalStats.queryCurrent.dec(); }
-    public void incQueryTotal() { totalStats.queryTotal.inc(); }
-    public void incFetchCurrent() { totalStats.fetchCurrent.inc(); }
-    public void decFetchCurrent() { totalStats.fetchCurrent.dec(); }
-    public void incFetchTotal() { totalStats.fetchTotal.inc(); }
-    public void incExpandSearchCurrent() { totalStats.expandSearchCurrent.inc(); }
-    public void decExpandSearch() { totalStats.expandSearchCurrent.dec(); }
-    public void incExpandSearch() { totalStats.expandSearchTotal.inc(); }
 
     public void setStats(SearchCoordinatorStats searchCoordinatorStats) {
         totalStats.queryMetric.inc(searchCoordinatorStats.totalStats.queryMetric.sum());
@@ -99,46 +92,63 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         totalStats.expandSearchCurrent.inc(searchCoordinatorStats.totalStats.expandSearchCurrent.count());
         totalStats.expandSearchTotal.inc(searchCoordinatorStats.totalStats.expandSearchTotal.count());
     }
+
+    private void computeStats(SearchPhaseContext searchPhaseContext, Consumer<StatsHolder> consumer) {
+        consumer.accept(totalStats);
+    }
+
     @Override
-    public void onQueryPhaseStart() {
-        totalStats.queryCurrent.inc();
+    public void onQueryPhaseStart(SearchPhaseContext context) {
+        computeStats(context, statsHolder -> {
+            statsHolder.queryCurrent.inc();
+        });
     }
     @Override
-    public void onQueryPhaseEnd(long tookTime) {
-        totalStats.queryCurrent.dec();
-        totalStats.queryTotal.inc();
-        totalStats.queryMetric.inc(tookTime);
+    public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
+        computeStats(context, statsHolder -> {
+            totalStats.queryCurrent.dec();
+            totalStats.queryTotal.inc();
+            totalStats.queryMetric.inc(tookTime);
+        });
     }
     @Override
-    public void onQueryPhaseFailure() {
+    public void onQueryPhaseFailure(SearchPhaseContext context) {
         return;
     }
     @Override
-    public void onFetchPhaseStart() {
-        totalStats.fetchCurrent.inc();
+    public void onFetchPhaseStart(SearchPhaseContext context) {
+        computeStats(context, statsHolder -> {
+            totalStats.fetchCurrent.inc();
+        });
     }
     @Override
-    public void onFetchPhaseEnd(long tookTime) {
-        totalStats.fetchCurrent.dec();
-        totalStats.fetchTotal.inc();
-        totalStats.fetchMetric.inc(tookTime);
+    public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
+        computeStats(context, statsHolder -> {
+            totalStats.fetchCurrent.dec();
+            totalStats.fetchTotal.inc();
+            totalStats.fetchMetric.inc(tookTime);
+        });
     }
     @Override
-    public void onFetchPhaseFailure() {
+    public void onFetchPhaseFailure(SearchPhaseContext context) {
         return;
     }
     @Override
-    public void onExpandSearchPhaseStart() {
-        totalStats.expandSearchCurrent.inc();
+    public void onExpandSearchPhaseStart(SearchPhaseContext context) {
+        computeStats(context, statsHolder -> {
+            totalStats.expandSearchCurrent.inc();
+        });
     }
     @Override
-    public void onExpandSearchPhaseEnd(long tookTime) {
-        totalStats.expandSearchCurrent.dec();
-        totalStats.expandSearchTotal.inc();
-        totalStats.expandSearchMetric.inc(tookTime);
+    public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
+        computeStats(context, statsHolder -> {
+            totalStats.expandSearchCurrent.dec();
+            totalStats.expandSearchTotal.inc();
+            totalStats.expandSearchMetric.inc(tookTime);
+        });
     }
     @Override
-    public void onExpandSearchPhaseFailure() {
+    public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
         return;
     }
     @Override
