@@ -122,7 +122,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     private SearchRequestOperationsListener searchRequestOperationsListener;
     private List<SearchRequestOperationsListener> searchListenersList;
-    private SearchOperationListenerExecutor searchOperationListenerExecutor;
 
     AbstractSearchAsyncAction(
         String name,
@@ -383,7 +382,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 : BaseOpenSearchException.guessRootCauses(shardSearchFailures[0].getCause())[0];
             logger.debug(() -> new ParameterizedMessage("All shards failed for phase: [{}]", getName()), cause);
             onPhaseFailure(currentPhase, "all shards failed", cause);
-            onPhaseFailure(this, searchRequestOperationsListener);
 
         } else {
             Boolean allowPartialResults = request.allowPartialSearchResults();
@@ -433,19 +431,33 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                     clusterState.version()
                 );
             }
-            onPhaseEnd();
+            onPhaseEnd(this);
             executePhase(nextPhase);
         }
     }
 
-    private void onPhaseEnd() {
-        searchOperationListenerExecutor.end();
+    private void onPhaseEnd(SearchPhaseContext searchPhaseContext) {
+        long tookTimeInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - this.getCurrentPhase().getStartTime());
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        }
     }
-    private void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
+    private void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
         setCurrentPhase(phase);
-        searchOperationListenerExecutor = new SearchOperationListenerExecutor(searchPhaseContext, searchRequestOperationsListener);
+        phase.setStartTimeInNanos(System.nanoTime());
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseStart(searchPhaseContext);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseStart(searchPhaseContext);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseStart(searchPhaseContext);
+        }
     }
-    private void onPhaseFailure (SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener searchRequestOperationsListener) {
+    private void onPhaseFailureListener (SearchPhaseContext searchPhaseContext) {
         if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseFailure(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
@@ -454,9 +466,10 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             searchRequestOperationsListener.onExpandSearchPhaseFailure(searchPhaseContext);
         }
     }
+
     private void executePhase(SearchPhase phase) {
         try {
-            onPhaseStart(phase, this, searchRequestOperationsListener);
+            onPhaseStart(phase, this);
             phase.run();
         } catch (Exception e) {
             if (logger.isDebugEnabled()) {
@@ -692,12 +705,19 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             }
             listener.onResponse(buildSearchResponse(internalSearchResponse, failures, scrollId, searchContextId));
         }
-        onPhaseEnd();
+        onPhaseEnd(this);
         setCurrentPhase(null);
     }
 
     @Override
     public final void onPhaseFailure(SearchPhase phase, String msg, Throwable cause) {
+        if (phase instanceof SearchQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onQueryPhaseFailure(this);
+        } else if (phase instanceof FetchSearchPhase) {
+            searchRequestOperationsListener.onFetchPhaseFailure(this);
+        } else if (phase instanceof ExpandSearchPhase) {
+            searchRequestOperationsListener.onExpandSearchPhaseFailure(this);
+        }
         raisePhaseFailure(new SearchPhaseExecutionException(phase.getName(), msg, cause, buildShardFailures()));
     }
 
@@ -853,45 +873,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 queue.add(runnable);
             }
             return toExecute;
-        }
-    }
-
-    private static final class SearchOperationListenerExecutor {
-        private final SearchRequestOperationsListener listener;
-        private final SearchPhaseContext searchPhaseContext;
-
-        private long startTimeInNanos;
-
-        private long endTimeInNanos;
-
-        private long tookTimeInMillis;
-
-        SearchOperationListenerExecutor(SearchPhaseContext searchPhaseContext, SearchRequestOperationsListener listener) {
-            this.searchPhaseContext = searchPhaseContext;
-            this.listener = listener;
-            if (searchPhaseContext.getCurrentPhase() == null) {
-                return;
-            }
-            startTimeInNanos = System.nanoTime();
-            if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-                listener.onQueryPhaseStart(searchPhaseContext);
-            } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-                listener.onFetchPhaseStart(searchPhaseContext);
-            } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-                listener.onExpandSearchPhaseStart(searchPhaseContext);
-            }
-        }
-
-        public void end() {
-            endTimeInNanos = System.nanoTime();
-            tookTimeInMillis = TimeUnit.NANOSECONDS.toMillis(endTimeInNanos - startTimeInNanos);
-            if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-                listener.onQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
-            } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-                listener.onFetchPhaseEnd(searchPhaseContext, tookTimeInMillis);
-            } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-                listener.onExpandSearchPhaseEnd(searchPhaseContext, tookTimeInMillis);
-            }
         }
     }
 }
