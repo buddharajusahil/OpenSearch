@@ -107,7 +107,6 @@ public class NodeIndicesStats implements Writeable, ToXContentFragment {
             }
         }
         this.stats.addCoordinatorStats(coordinatorStats);
-
     }
 
     @Nullable

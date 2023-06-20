@@ -43,6 +43,12 @@ public interface SearchRequestOperationsListener {
     /**
      * Executed when the query phase is started
      */
+    void onDFSPreQueryPhaseStart(SearchPhaseContext context);
+    void onDFSPreQueryPhaseFailure(SearchPhaseContext context);
+    void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime);
+    void onCanMatchPhaseStart(SearchPhaseContext context);
+    void onCanMatchPhaseFailure(SearchPhaseContext context);
+    void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime);
     void onQueryPhaseStart(SearchPhaseContext context);
     void onQueryPhaseFailure(SearchPhaseContext context);
     void onQueryPhaseEnd(SearchPhaseContext context, long tookTime);
@@ -61,12 +67,18 @@ public interface SearchRequestOperationsListener {
     final class CompositeListener implements SearchRequestOperationsListener {
         private final List<SearchRequestOperationsListener> listeners;
         private final Logger logger;
+        private long canMatchPhaseStart;
+        private long canMatchPhaseEnd;
+        private long dfsPreQueryPhaseStart;
+        private long dfsPreQueryPhaseEnd;
         private long queryPhaseStart;
         private long queryPhaseEnd;
         private long fetchPhaseStart;
         private long fetchPhaseEnd;
         private long expandSearchPhaseStart;
         private long expandSearchPhaseEnd;
+        private long dfsPreQueryTotal;
+        private long canMatchTotal;
         private long queryTotal;
         private long fetchTotal;
         private long expandSearchTotal;
@@ -75,6 +87,72 @@ public interface SearchRequestOperationsListener {
         public CompositeListener(List<SearchRequestOperationsListener> listeners, Logger logger) {
             this.listeners = listeners;
             this.logger = logger;
+        }
+        @Override
+        public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    dfsPreQueryPhaseStart = System.nanoTime();
+                    listener.onDFSPreQueryPhaseStart(context);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseStart listener [{}] failed", listener), e);
+                }
+            }
+        }
+        @Override
+        public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    dfsPreQueryPhaseEnd = System.nanoTime();
+                    dfsPreQueryTotal = TimeUnit.NANOSECONDS.toMillis(dfsPreQueryPhaseEnd - dfsPreQueryPhaseStart);
+                    listener.onDFSPreQueryPhaseEnd(context, tookTime);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseEnd listener [{}] failed", listener), e);
+                }
+            }
+        }
+        @Override
+        public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    listener.onDFSPreQueryPhaseFailure(context);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseFailure listener [{}] failed", listener), e);
+                }
+            }
+        }
+        @Override
+        public void onCanMatchPhaseStart(SearchPhaseContext context) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    canMatchPhaseStart = System.nanoTime();
+                    listener.onCanMatchPhaseStart(context);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseStart listener [{}] failed", listener), e);
+                }
+            }
+        }
+        @Override
+        public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    canMatchPhaseEnd = System.nanoTime();
+                    canMatchTotal = TimeUnit.NANOSECONDS.toMillis(canMatchPhaseEnd - canMatchPhaseStart);
+                    listener.onCanMatchPhaseEnd(context, tookTime);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseEnd listener [{}] failed", listener), e);
+                }
+            }
+        }
+        @Override
+        public void onCanMatchPhaseFailure(SearchPhaseContext context) {
+            for (SearchRequestOperationsListener listener : listeners) {
+                try {
+                    listener.onCanMatchPhaseFailure(context);
+                } catch (Exception e) {
+                    logger.warn(() -> new ParameterizedMessage("onPhaseFailure listener [{}] failed", listener), e);
+                }
+            }
         }
         @Override
         public void onQueryPhaseStart(SearchPhaseContext context) {

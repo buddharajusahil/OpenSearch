@@ -438,7 +438,11 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     private void onPhaseEnd(SearchPhaseContext searchPhaseContext) {
         long tookTimeInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - this.getCurrentPhase().getStartTime());
-        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchDfsQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onDFSPreQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
+            searchRequestOperationsListener.onCanMatchPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
             searchRequestOperationsListener.onFetchPhaseEnd(searchPhaseContext, tookTimeInMillis);
@@ -449,21 +453,16 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
         setCurrentPhase(phase);
         phase.setStartTimeInNanos(System.nanoTime());
-        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+        if (searchPhaseContext.getCurrentPhase() instanceof SearchDfsQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onDFSPreQueryPhaseStart(searchPhaseContext);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
+            searchRequestOperationsListener.onCanMatchPhaseStart(searchPhaseContext);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
             searchRequestOperationsListener.onFetchPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
             searchRequestOperationsListener.onExpandSearchPhaseStart(searchPhaseContext);
-        }
-    }
-    private void onPhaseFailureListener (SearchPhaseContext searchPhaseContext) {
-        if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onQueryPhaseFailure(searchPhaseContext);
-        } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
-            searchRequestOperationsListener.onFetchPhaseFailure(searchPhaseContext);
-        } else if (searchPhaseContext.getCurrentPhase() instanceof ExpandSearchPhase) {
-            searchRequestOperationsListener.onExpandSearchPhaseFailure(searchPhaseContext);
         }
     }
 
@@ -711,7 +710,11 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void onPhaseFailure(SearchPhase phase, String msg, Throwable cause) {
-        if (phase instanceof SearchQueryThenFetchAsyncAction) {
+        if (phase instanceof SearchDfsQueryThenFetchAsyncAction) {
+            searchRequestOperationsListener.onDFSPreQueryPhaseFailure(this);
+        } else if (phase instanceof CanMatchPreFilterSearchPhase) {
+            searchRequestOperationsListener.onCanMatchPhaseFailure(this);
+        } else if (phase instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseFailure(this);
         } else if (phase instanceof FetchSearchPhase) {
             searchRequestOperationsListener.onFetchPhaseFailure(this);

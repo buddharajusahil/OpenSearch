@@ -60,7 +60,6 @@ import org.opensearch.index.translog.TranslogStats;
 import org.opensearch.index.warmer.WarmerStats;
 import org.opensearch.indices.IndicesQueryCache;
 import org.opensearch.search.suggest.completion.CompletionStats;
-import org.opensearch.action.search.SearchCoordinatorStats;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -288,10 +287,9 @@ public class CommonStats implements Writeable, ToXContentFragment {
 
     // Add all Coordinator Stats to the Search Stats from here
     public void addCoordinatorStats(CoordinatorStats coordinatorStats) {
-        if (coordinatorStats == null) {
-            return;
+        if (coordinatorStats.getSearchCoordinatorStats() != null) {
+            search.setSearchCoordinatorStats(coordinatorStats.getSearchCoordinatorStats());
         }
-        search.addSearchCoordinatorStats(coordinatorStats.searchCoordinatorStats);
     }
 
     public void add(CommonStats stats) {
