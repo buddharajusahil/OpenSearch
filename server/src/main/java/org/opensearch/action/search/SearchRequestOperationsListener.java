@@ -58,10 +58,6 @@ public interface SearchRequestOperationsListener {
     void onExpandSearchPhaseStart(SearchPhaseContext context);
     void onExpandSearchPhaseFailure(SearchPhaseContext context);
     void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime);
-    void addQueryTotal(long queryTotal);
-    void addFetchTotal(long fetchTotal);
-    void addExpandSearchTotal(long expandSearchTotal);
-
 
 
     final class CompositeListener implements SearchRequestOperationsListener {
@@ -253,20 +249,5 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
-        @Override
-        public void addQueryTotal(long queryTotal) {
-            this.queryTotal = queryTotal;
-        }
-        @Override
-        public void addFetchTotal(long fetchTotal) {
-            this.fetchTotal = fetchTotal;
-        }
-        @Override
-        public void addExpandSearchTotal(long expandSearchTotal) {
-            this.expandSearchTotal = expandSearchTotal;
-        }
     }
-
-
-
 }

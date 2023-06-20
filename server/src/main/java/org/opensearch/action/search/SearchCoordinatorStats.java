@@ -168,18 +168,6 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
         return;
     }
-    @Override
-    public void addQueryTotal(long queryTotal) {
-        totalStats.queryMetric.inc(queryTotal);
-    }
-    @Override
-    public void addFetchTotal(long fetchTotal) {
-        totalStats.fetchMetric.inc(fetchTotal);
-    }
-    @Override
-    public void addExpandSearchTotal(long expandSearchTotal) {
-       totalStats.expandSearchMetric.inc(expandSearchTotal);
-    }
 
     public static final class StatsHolder {
         public MeanMetric dfsPreQueryMetric = new MeanMetric();
