@@ -89,6 +89,10 @@ public class SearchStats implements Writeable, ToXContentFragment {
         @Nullable
         private SearchCoordinatorStats searchCoordinatorStats;
 
+        public SearchCoordinatorStats getSearchCoordinatorStats() {
+            return searchCoordinatorStats;
+        }
+
         private Stats() {
             // for internal use, initializes all counts to 0
         }
@@ -156,23 +160,23 @@ public class SearchStats implements Writeable, ToXContentFragment {
 
             if (in.getVersion().onOrAfter(Version.V_2_0_0)) {
                 this.searchCoordinatorStats = new SearchCoordinatorStats();
-                this.searchCoordinatorStats.totalStats.dfsPreQueryMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.dfsPreQueryMetric.setSum(in.readVLong());
                 this.searchCoordinatorStats.totalStats.dfsPreQueryCurrent.setCount(in.readVLong());
                 this.searchCoordinatorStats.totalStats.dfsPreQueryTotal.setCount(in.readVLong());
 
-                this.searchCoordinatorStats.totalStats.canMatchMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.canMatchMetric.setSum(in.readVLong());
                 this.searchCoordinatorStats.totalStats.canMatchCurrent.setCount(in.readVLong());
                 this.searchCoordinatorStats.totalStats.canMatchTotal.setCount(in.readVLong());
 
-                this.searchCoordinatorStats.totalStats.queryMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.queryMetric.setSum(in.readVLong());
                 this.searchCoordinatorStats.totalStats.queryCurrent.setCount(in.readVLong());
                 this.searchCoordinatorStats.totalStats.queryTotal.setCount(in.readVLong());
 
-                this.searchCoordinatorStats.totalStats.fetchMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.fetchMetric.setSum(in.readVLong());
                 this.searchCoordinatorStats.totalStats.fetchCurrent.setCount(in.readVLong());
                 this.searchCoordinatorStats.totalStats.fetchTotal.setCount(in.readVLong());
 
-                this.searchCoordinatorStats.totalStats.expandSearchMetric.setCount(in.readVLong());
+                this.searchCoordinatorStats.totalStats.expandSearchMetric.setSum(in.readVLong());
                 this.searchCoordinatorStats.totalStats.expandSearchCurrent.setCount(in.readVLong());
                 this.searchCoordinatorStats.totalStats.expandSearchTotal.setCount(in.readVLong());
             }
@@ -329,23 +333,23 @@ public class SearchStats implements Writeable, ToXContentFragment {
             }
 
             if (out.getVersion().onOrAfter(Version.V_2_0_0)) {
-                out.writeVLong(this.searchCoordinatorStats.totalStats.dfsPreQueryMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.dfsPreQueryMetric.sum());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.dfsPreQueryCurrent.count());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.dfsPreQueryTotal.count());
 
-                out.writeVLong(this.searchCoordinatorStats.totalStats.canMatchMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.canMatchMetric.sum());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.canMatchCurrent.count());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.canMatchTotal.count());
 
-                out.writeVLong(this.searchCoordinatorStats.totalStats.queryMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.queryMetric.sum());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.queryCurrent.count());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.queryTotal.count());
 
-                out.writeVLong(this.searchCoordinatorStats.totalStats.fetchMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.fetchMetric.sum());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.fetchCurrent.count());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.fetchTotal.count());
 
-                out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchMetric.count());
+                out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchMetric.sum());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchCurrent.count());
                 out.writeVLong(this.searchCoordinatorStats.totalStats.expandSearchTotal.count());
             }
