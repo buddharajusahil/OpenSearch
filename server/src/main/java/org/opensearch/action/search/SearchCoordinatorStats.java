@@ -78,24 +78,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     private void computeStats(SearchPhaseContext searchPhaseContext, Consumer<StatsHolder> consumer) {
         consumer.accept(totalStats);
     }
-    @Override
-    public void onCanMatchPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            statsHolder.canMatchCurrent.inc();
-        });
-    }
-    @Override
-    public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
-        computeStats(context, statsHolder -> {
-            totalStats.canMatchCurrent.dec();
-            totalStats.canMatchTotal.inc();
-            totalStats.canMatchMetric.inc(tookTime);
-        });
-    }
-    @Override
-    public void onCanMatchPhaseFailure(SearchPhaseContext context) {
-        return;
-    }
+
     @Override
     public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
         computeStats(context, statsHolder -> {
@@ -114,6 +97,25 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
         return;
     }
+    @Override
+    public void onCanMatchPhaseStart(SearchPhaseContext context) {
+        computeStats(context, statsHolder -> {
+            statsHolder.canMatchCurrent.inc();
+        });
+    }
+    @Override
+    public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
+        computeStats(context, statsHolder -> {
+            totalStats.canMatchCurrent.dec();
+            totalStats.canMatchTotal.inc();
+            totalStats.canMatchMetric.inc(tookTime);
+        });
+    }
+    @Override
+    public void onCanMatchPhaseFailure(SearchPhaseContext context) {
+        return;
+    }
+
     @Override
     public void onQueryPhaseStart(SearchPhaseContext context) {
         computeStats(context, statsHolder -> {
