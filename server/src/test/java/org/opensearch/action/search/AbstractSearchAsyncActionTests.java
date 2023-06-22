@@ -95,6 +95,8 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
     private final Set<ShardSearchContextId> releasedContexts = new CopyOnWriteArraySet<>();
     private ExecutorService executor;
 
+    ThreadPool threadPool;
+
     @Before
     @Override
     public void setUp() throws Exception {
@@ -543,8 +545,6 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
     }
 
 
-    TaskManager taskManager;
-    ThreadPool threadPool;
 
     public void testSearchRequestListeners() throws InterruptedException{
         AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
@@ -762,8 +762,6 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         action.start();
         assertEquals(2, queryPhaseStart.get());
 
-
-
         MockSearchPhaseContext mockSearchPhaseContext = new MockSearchPhaseContext(1);
         QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
             OpenSearchExecutors.newDirectExecutorService(),
@@ -924,6 +922,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         };
         final List<SearchRequestOperationsListener> requestOperationListeners = new ArrayList<>(Arrays.asList(testListener, testListener));
 
+        int numTasks = randomIntBetween(5, 50);
 
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
@@ -968,35 +967,12 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             }
         );
 
-        SearchQueryThenFetchAsyncAction action = new SearchQueryThenFetchAsyncAction(
-            logger,
-            searchTransportService,
-            (clusterAlias, node) -> lookup.get(node),
-            Collections.singletonMap("_na_", new AliasFilter(null, Strings.EMPTY_ARRAY)),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            controller,
-            executor,
-            resultConsumer,
-            searchRequest,
-            null,
-            shardsIter,
-            timeProvider,
-            null,
-            task,
-            SearchResponse.Clusters.EMPTY
-        );
-        action.setSearchListenerList(requestOperationListeners);
 
+        Thread[] threads = new Thread[numTasks];
+        Phaser phaser = new Phaser(numTasks + 1);
+        CountDownLatch countDownLatch = new CountDownLatch(numTasks);
 
-        action.start();
-        action.start();
-
-        Thread[] threads = new Thread[5];
-        Phaser phaser = new Phaser(5 + 1);
-        CountDownLatch countDownLatch = new CountDownLatch(5);
-
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < numTasks; i++) {
             SearchQueryThenFetchAsyncAction newAction = new SearchQueryThenFetchAsyncAction(
                 logger,
                 searchTransportService,
@@ -1025,7 +1001,41 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         }
         phaser.arriveAndAwaitAdvance();
         countDownLatch.await();
+        assertEquals(numTasks * 2, queryPhaseStart.get());
 
+        Thread[] threadsDFS = new Thread[numTasks];
+        Phaser phaserDFS = new Phaser(numTasks + 1);
+        CountDownLatch countDownLatchDFS = new CountDownLatch(numTasks);
+        for (int i = 0; i < numTasks; i++) {
+            SearchDfsQueryThenFetchAsyncAction newAction = new SearchDfsQueryThenFetchAsyncAction(
+                logger,
+                searchTransportService,
+                (clusterAlias, node) -> lookup.get(node),
+                Collections.singletonMap("_na_", new AliasFilter(null, Strings.EMPTY_ARRAY)),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                controller,
+                executor,
+                resultConsumer,
+                searchRequest,
+                null,
+                shardsIter,
+                timeProvider,
+                null,
+                task,
+                SearchResponse.Clusters.EMPTY
+            );
+            newAction.setSearchListenerList(requestOperationListeners);
+            threadsDFS[i] = new Thread(() -> {
+                phaserDFS.arriveAndAwaitAdvance();
+                newAction.start();
+                countDownLatchDFS.countDown();
+            });
+            threadsDFS[i].start();
+        }
+        phaserDFS.arriveAndAwaitAdvance();
+        countDownLatchDFS.await();
+        assertEquals(numTasks * 2, dfsPreQueryPhaseStart.get());
     }
     private CountDownLatch runActionsConcurrently(List<? extends AbstractSearchAsyncAction<SearchPhaseResult>> listOfActions) {
         Thread[] threads = new Thread[5];
