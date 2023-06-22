@@ -437,7 +437,12 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     }
 
     private void onPhaseEnd(SearchPhaseContext searchPhaseContext) {
+
+        if (searchRequestOperationsListener == null) {
+            return;
+        }
         long tookTimeInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - this.getCurrentPhase().getStartTime());
+
         if (searchPhaseContext.getCurrentPhase() instanceof SearchDfsQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onDFSPreQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
         } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
@@ -453,6 +458,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
     private void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
         setCurrentPhase(phase);
         phase.setStartTimeInNanos(System.nanoTime());
+        if (searchRequestOperationsListener == null) {
+            return;
+        }
         if (searchPhaseContext.getCurrentPhase() instanceof SearchDfsQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onDFSPreQueryPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
@@ -710,17 +718,6 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void onPhaseFailure(SearchPhase phase, String msg, Throwable cause) {
-        if (phase instanceof SearchDfsQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onDFSPreQueryPhaseFailure(this);
-        } else if (phase instanceof CanMatchPreFilterSearchPhase) {
-            searchRequestOperationsListener.onCanMatchPhaseFailure(this);
-        } else if (phase instanceof SearchQueryThenFetchAsyncAction) {
-            searchRequestOperationsListener.onQueryPhaseFailure(this);
-        } else if (phase instanceof FetchSearchPhase) {
-            searchRequestOperationsListener.onFetchPhaseFailure(this);
-        } else if (phase instanceof ExpandSearchPhase) {
-            searchRequestOperationsListener.onExpandSearchPhaseFailure(this);
-        }
         raisePhaseFailure(new SearchPhaseExecutionException(phase.getName(), msg, cause, buildShardFailures()));
     }
 
