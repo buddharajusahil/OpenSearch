@@ -7,13 +7,10 @@
  */
 
 package org.opensearch.action.search;
-import org.opensearch.test.OpenSearchTestCase;
-import org.opensearch.common.inject.Inject;
-import org.opensearch.common.metrics.CounterMetric;
-import org.opensearch.common.metrics.MeanMetric;
 
-import java.util.function.Consumer;
-public class SearchCoordinatorStatsTests extends OpenSearchTestCase{
+import org.opensearch.test.OpenSearchTestCase;
+
+public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
     public void testSearchCoordinatorStats() {
         SearchCoordinatorStats testCoordinatorStats = new SearchCoordinatorStats();
 

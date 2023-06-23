@@ -63,7 +63,7 @@ public class CounterMetric implements Metric {
         return counter.sum();
     }
 
-    public void setCount (long newCount) {
+    public void setCount(long newCount) {
         counter.reset();
         counter.add(newCount);
     }

@@ -11,13 +11,6 @@ package org.opensearch.action.search;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
-import org.opensearch.ExceptionsHelper;
-import org.opensearch.index.shard.SearchOperationListener;
-import org.opensearch.search.internal.ReaderContext;
-import org.opensearch.search.internal.SearchContext;
-import org.opensearch.transport.TransportRequest;
-import org.opensearch.action.search.SearchPhaseContext;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,21 +37,34 @@ public interface SearchRequestOperationsListener {
      * Executed when the query phase is started
      */
     void onDFSPreQueryPhaseStart(SearchPhaseContext context);
-    void onDFSPreQueryPhaseFailure(SearchPhaseContext context);
-    void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime);
-    void onCanMatchPhaseStart(SearchPhaseContext context);
-    void onCanMatchPhaseFailure(SearchPhaseContext context);
-    void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime);
-    void onQueryPhaseStart(SearchPhaseContext context);
-    void onQueryPhaseFailure(SearchPhaseContext context);
-    void onQueryPhaseEnd(SearchPhaseContext context, long tookTime);
-    void onFetchPhaseStart(SearchPhaseContext context);
-    void onFetchPhaseFailure(SearchPhaseContext context);
-    void onFetchPhaseEnd(SearchPhaseContext context, long tookTime);
-    void onExpandSearchPhaseStart(SearchPhaseContext context);
-    void onExpandSearchPhaseFailure(SearchPhaseContext context);
-    void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime);
 
+    void onDFSPreQueryPhaseFailure(SearchPhaseContext context);
+
+    void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime);
+
+    void onCanMatchPhaseStart(SearchPhaseContext context);
+
+    void onCanMatchPhaseFailure(SearchPhaseContext context);
+
+    void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime);
+
+    void onQueryPhaseStart(SearchPhaseContext context);
+
+    void onQueryPhaseFailure(SearchPhaseContext context);
+
+    void onQueryPhaseEnd(SearchPhaseContext context, long tookTime);
+
+    void onFetchPhaseStart(SearchPhaseContext context);
+
+    void onFetchPhaseFailure(SearchPhaseContext context);
+
+    void onFetchPhaseEnd(SearchPhaseContext context, long tookTime);
+
+    void onExpandSearchPhaseStart(SearchPhaseContext context);
+
+    void onExpandSearchPhaseFailure(SearchPhaseContext context);
+
+    void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime);
 
     final class CompositeListener implements SearchRequestOperationsListener {
         private final List<SearchRequestOperationsListener> listeners;
@@ -79,11 +85,11 @@ public interface SearchRequestOperationsListener {
         private long fetchTotal;
         private long expandSearchTotal;
 
-
         public CompositeListener(List<SearchRequestOperationsListener> listeners, Logger logger) {
             this.listeners = listeners;
             this.logger = logger;
         }
+
         @Override
         public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -95,6 +101,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -107,6 +114,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -117,6 +125,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onCanMatchPhaseStart(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -128,6 +137,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -140,6 +150,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onCanMatchPhaseFailure(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -150,6 +161,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onQueryPhaseStart(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -161,6 +173,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -173,6 +186,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onQueryPhaseFailure(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -183,6 +197,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onFetchPhaseStart(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -194,6 +209,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -206,6 +222,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onFetchPhaseFailure(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -216,6 +233,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onExpandSearchPhaseStart(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -227,6 +245,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
             for (SearchRequestOperationsListener listener : listeners) {
@@ -239,6 +258,7 @@ public interface SearchRequestOperationsListener {
                 }
             }
         }
+
         @Override
         public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
             for (SearchRequestOperationsListener listener : listeners) {

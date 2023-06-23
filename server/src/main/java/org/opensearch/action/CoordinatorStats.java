@@ -17,14 +17,16 @@ import org.opensearch.action.search.SearchCoordinatorStats;
  */
 public final class CoordinatorStats {
 
-
     public SearchCoordinatorStats searchCoordinatorStats;
-    public CoordinatorStats () {
+
+    public CoordinatorStats() {
         searchCoordinatorStats = new SearchCoordinatorStats();
     }
+
     public SearchCoordinatorStats getSearchCoordinatorStats() {
         return searchCoordinatorStats;
     }
+
     public void setSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
         this.searchCoordinatorStats = searchCoordinatorStats;
     }

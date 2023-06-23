@@ -32,11 +32,6 @@
 
 package org.opensearch.action.search;
 
-import org.apache.lucene.search.FieldDoc;
-import org.apache.lucene.search.SortField;
-import org.apache.lucene.search.TopFieldDocs;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.grouping.CollapseTopFieldDocs;
 import org.junit.After;
 import org.junit.Before;
 import org.opensearch.Version;
@@ -50,8 +45,6 @@ import org.opensearch.common.UUIDs;
 import org.opensearch.common.breaker.CircuitBreaker;
 import org.opensearch.common.breaker.NoopCircuitBreaker;
 import org.opensearch.common.collect.Tuple;
-import org.opensearch.common.document.DocumentField;
-import org.opensearch.common.lucene.search.TopDocsAndMaxScore;
 import org.opensearch.common.util.concurrent.AtomicArray;
 import org.opensearch.common.util.concurrent.OpenSearchExecutors;
 import org.opensearch.common.util.set.Sets;
@@ -60,7 +53,8 @@ import org.opensearch.index.Index;
 import org.opensearch.index.query.MatchAllQueryBuilder;
 import org.opensearch.index.shard.ShardId;
 import org.opensearch.index.shard.ShardNotFoundException;
-import org.opensearch.search.*;
+import org.opensearch.search.SearchPhaseResult;
+import org.opensearch.search.SearchShardTarget;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.internal.AliasFilter;
 import org.opensearch.search.internal.InternalSearchResponse;
@@ -68,16 +62,28 @@ import org.opensearch.search.internal.ShardSearchContextId;
 import org.opensearch.search.internal.ShardSearchRequest;
 import org.opensearch.search.query.QuerySearchResult;
 import org.opensearch.search.sort.SortBuilders;
-import org.opensearch.tasks.TaskManager;
 import org.opensearch.test.InternalAggregationTestCase;
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.threadpool.TestThreadPool;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.Transport;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -544,7 +550,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         assertThat(searchResponse.getSuccessfulShards(), equalTo(shards.length));
     }
 
-    public void testSearchRequestListeners() throws InterruptedException{
+    public void testSearchRequestListeners() throws InterruptedException {
         AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
         AtomicInteger dfsPreQueryPhaseFailure = new AtomicInteger();
         AtomicInteger dfsPreQueryPhaseEnd = new AtomicInteger();
@@ -692,6 +698,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
 
         action.sendSearchResponse(InternalSearchResponse.empty(), null);
     }
+
     public void testMultiThreadCoordinateStats() throws InterruptedException {
         AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
         AtomicInteger dfsPreQueryPhaseFailure = new AtomicInteger();
@@ -806,7 +813,6 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         Thread[] threads = new Thread[numTasks];
         Phaser phaser = new Phaser(numTasks + 1);
         CountDownLatch countDownLatch = new CountDownLatch(numTasks);
-
 
         // Search query, fetch, expand search
         for (int i = 0; i < numTasks; i++) {
@@ -929,6 +935,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             SearchResponse.Clusters.EMPTY
         );
     }
+
     private SearchQueryThenFetchAsyncAction createSearchQueryThenFetchAsyncAction() {
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
@@ -1001,6 +1008,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             }
         };
     }
+
     private CanMatchPreFilterSearchPhase createCanMatchPreFilterSearchPhase() {
         final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
             0,
@@ -1045,6 +1053,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             SearchResponse.Clusters.EMPTY
         );
     }
+
     private FetchSearchPhase createFetchSearchPhase() {
         SearchPhaseController controller = new SearchPhaseController(
             writableRegistry(),
@@ -1072,11 +1081,13 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             }
         );
     }
+
     private ExpandSearchPhase createExpandSearchPhase() {
         MockSearchPhaseContext mockSearchPhaseContext = new MockSearchPhaseContext(1);
         InternalSearchResponse internalSearchResponse = new InternalSearchResponse(null, null, null, null, false, null, 1);
         return new ExpandSearchPhase(mockSearchPhaseContext, internalSearchResponse, null);
     }
+
     private static final class PhaseResult extends SearchPhaseResult {
         PhaseResult(ShardSearchContextId contextId) {
             this.contextId = contextId;

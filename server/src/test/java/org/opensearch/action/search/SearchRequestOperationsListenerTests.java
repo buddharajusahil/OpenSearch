@@ -8,16 +8,11 @@
 
 package org.opensearch.action.search;
 
-import org.opensearch.index.shard.SearchOperationListener;
-import org.opensearch.search.SearchShardTarget;
-import org.opensearch.search.internal.SearchContext;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SearchRequestOperationsListenerTests extends OpenSearchTestCase {

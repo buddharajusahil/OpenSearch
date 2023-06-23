@@ -50,7 +50,6 @@ import org.opensearch.common.lease.Releasable;
 import org.opensearch.common.lease.Releasables;
 import org.opensearch.common.util.concurrent.AbstractRunnable;
 import org.opensearch.common.util.concurrent.AtomicArray;
-import org.opensearch.index.reindex.ScrollableHitSource;
 import org.opensearch.index.shard.ShardId;
 import org.opensearch.search.SearchPhaseResult;
 import org.opensearch.search.SearchShardTarget;
@@ -179,7 +178,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     }
 
-    public void setSearchListenerList (List<SearchRequestOperationsListener> searchListenersList) {
+    public void setSearchListenerList(List<SearchRequestOperationsListener> searchListenersList) {
         this.searchListenersList = searchListenersList;
         this.searchRequestOperationsListener = new SearchRequestOperationsListener.CompositeListener(this.searchListenersList, logger);
     }
@@ -454,7 +453,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             searchRequestOperationsListener.onExpandSearchPhaseEnd(searchPhaseContext, tookTimeInMillis);
         }
     }
-    public void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
+
+    public void onPhaseStart(SearchPhase phase, SearchPhaseContext searchPhaseContext) {
         setCurrentPhase(phase);
         phase.setStartTimeInNanos(System.nanoTime());
         if (searchRequestOperationsListener == null) {
@@ -642,8 +642,14 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         }
     }
 
-    public SearchPhase getCurrentPhase() { return currentPhase; }
-    public void setCurrentPhase(SearchPhase phase) { currentPhase = phase; }
+    public SearchPhase getCurrentPhase() {
+        return currentPhase;
+    }
+
+    public void setCurrentPhase(SearchPhase phase) {
+        currentPhase = phase;
+    }
+
     @Override
     public final int getNumShards() {
         return results.getNumShards();

@@ -27,53 +27,67 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     // private volatile Map<String, StatsHolder> groupStats = emptyMap();
 
     @Inject
-    public SearchCoordinatorStats () { }
+    public SearchCoordinatorStats() {}
+
     public long getDFSPreQueryMetric() {
         return totalStats.dfsPreQueryMetric.sum();
     }
+
     public long getDFSPreQueryCurrent() {
         return totalStats.dfsPreQueryCurrent.count();
     }
+
     public long getDFSPreQueryTotal() {
         return totalStats.dfsPreQueryTotal.count();
     }
+
     public long getCanMatchMetric() {
         return totalStats.canMatchMetric.sum();
     }
+
     public long getCanMatchCurrent() {
         return totalStats.canMatchCurrent.count();
     }
+
     public long getCanMatchTotal() {
         return totalStats.canMatchTotal.count();
     }
+
     public long getQueryMetric() {
         return totalStats.queryMetric.sum();
     }
+
     public long getQueryCurrent() {
         return totalStats.queryCurrent.count();
     }
+
     public long getQueryTotal() {
         return totalStats.queryTotal.count();
     }
+
     public long getFetchMetric() {
         return totalStats.fetchMetric.sum();
     }
+
     public long getFetchCurrent() {
         return totalStats.fetchCurrent.count();
     }
+
     public long getFetchTotal() {
         return totalStats.fetchTotal.count();
     }
+
     public long getExpandSearchMetric() {
         return totalStats.expandSearchMetric.sum();
     }
+
     public long getExpandSearchCurrent() {
         return totalStats.expandSearchCurrent.count();
     }
+
     public long getExpandSearchTotal() {
         return totalStats.expandSearchTotal.count();
     }
-
 
     private void computeStats(SearchPhaseContext searchPhaseContext, Consumer<StatsHolder> consumer) {
         consumer.accept(totalStats);
@@ -81,10 +95,9 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
 
     @Override
     public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            statsHolder.dfsPreQueryCurrent.inc();
-        });
+        computeStats(context, statsHolder -> { statsHolder.dfsPreQueryCurrent.inc(); });
     }
+
     @Override
     public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
         computeStats(context, statsHolder -> {
@@ -93,16 +106,17 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
             totalStats.dfsPreQueryMetric.inc(tookTime);
         });
     }
+
     @Override
     public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
         return;
     }
+
     @Override
     public void onCanMatchPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            statsHolder.canMatchCurrent.inc();
-        });
+        computeStats(context, statsHolder -> { statsHolder.canMatchCurrent.inc(); });
     }
+
     @Override
     public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
         computeStats(context, statsHolder -> {
@@ -111,6 +125,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
             totalStats.canMatchMetric.inc(tookTime);
         });
     }
+
     @Override
     public void onCanMatchPhaseFailure(SearchPhaseContext context) {
         return;
@@ -118,10 +133,9 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
 
     @Override
     public void onQueryPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            statsHolder.queryCurrent.inc();
-        });
+        computeStats(context, statsHolder -> { statsHolder.queryCurrent.inc(); });
     }
+
     @Override
     public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
         computeStats(context, statsHolder -> {
@@ -130,16 +144,17 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
             totalStats.queryMetric.inc(tookTime);
         });
     }
+
     @Override
     public void onQueryPhaseFailure(SearchPhaseContext context) {
         return;
     }
+
     @Override
     public void onFetchPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            totalStats.fetchCurrent.inc();
-        });
+        computeStats(context, statsHolder -> { totalStats.fetchCurrent.inc(); });
     }
+
     @Override
     public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
         computeStats(context, statsHolder -> {
@@ -148,16 +163,17 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
             totalStats.fetchMetric.inc(tookTime);
         });
     }
+
     @Override
     public void onFetchPhaseFailure(SearchPhaseContext context) {
         return;
     }
+
     @Override
     public void onExpandSearchPhaseStart(SearchPhaseContext context) {
-        computeStats(context, statsHolder -> {
-            totalStats.expandSearchCurrent.inc();
-        });
+        computeStats(context, statsHolder -> { totalStats.expandSearchCurrent.inc(); });
     }
+
     @Override
     public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
         computeStats(context, statsHolder -> {
@@ -166,6 +182,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
             totalStats.expandSearchMetric.inc(tookTime);
         });
     }
+
     @Override
     public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
         return;

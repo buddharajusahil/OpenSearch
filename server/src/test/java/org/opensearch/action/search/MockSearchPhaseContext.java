@@ -67,6 +67,7 @@ public final class MockSearchPhaseContext implements SearchPhaseContext {
     final Set<ShardSearchContextId> releasedSearchContexts = new HashSet<>();
     final SearchRequest searchRequest = new SearchRequest();
     final AtomicReference<SearchResponse> searchResponse = new AtomicReference<>();
+
     public MockSearchPhaseContext(int numShards) {
         this.numShards = numShards;
         numSuccess = new AtomicInteger(numShards);

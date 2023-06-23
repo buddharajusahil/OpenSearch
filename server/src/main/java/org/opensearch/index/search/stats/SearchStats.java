@@ -57,8 +57,6 @@ import java.util.Map;
  */
 public class SearchStats implements Writeable, ToXContentFragment {
 
-
-
     /**
      * Statistics for search
      *
@@ -380,23 +378,43 @@ public class SearchStats implements Writeable, ToXContentFragment {
             if (searchCoordinatorStats != null) {
                 builder.startObject(Fields.COORDINATOR);
 
-                builder.humanReadableField(Fields.DFS_PREQUERY_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getDFSPreQueryMetric()));
+                builder.humanReadableField(
+                    Fields.DFS_PREQUERY_TIME_IN_MILLIS,
+                    Fields.QUERY_TIME,
+                    new TimeValue(searchCoordinatorStats.getDFSPreQueryMetric())
+                );
                 builder.field(Fields.DFS_PREQUERY_CURRENT, searchCoordinatorStats.getDFSPreQueryCurrent());
                 builder.field(Fields.DFS_PREQUERY_TOTAL, searchCoordinatorStats.getDFSPreQueryTotal());
 
-                builder.humanReadableField(Fields.CANMATCH_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getCanMatchMetric()));
+                builder.humanReadableField(
+                    Fields.CANMATCH_TIME_IN_MILLIS,
+                    Fields.QUERY_TIME,
+                    new TimeValue(searchCoordinatorStats.getCanMatchMetric())
+                );
                 builder.field(Fields.CANMATCH_CURRENT, searchCoordinatorStats.getCanMatchCurrent());
                 builder.field(Fields.CANMATCH_TOTAL, searchCoordinatorStats.getCanMatchTotal());
 
-                builder.humanReadableField(Fields.QUERY_TIME_IN_MILLIS, Fields.QUERY_TIME, new TimeValue(searchCoordinatorStats.getQueryMetric()));
+                builder.humanReadableField(
+                    Fields.QUERY_TIME_IN_MILLIS,
+                    Fields.QUERY_TIME,
+                    new TimeValue(searchCoordinatorStats.getQueryMetric())
+                );
                 builder.field(Fields.QUERY_CURRENT, searchCoordinatorStats.getQueryCurrent());
                 builder.field(Fields.QUERY_TOTAL, searchCoordinatorStats.getQueryTotal());
 
-                builder.humanReadableField(Fields.FETCH_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getFetchMetric()));
+                builder.humanReadableField(
+                    Fields.FETCH_TIME_IN_MILLIS,
+                    Fields.FETCH_TIME,
+                    new TimeValue(searchCoordinatorStats.getFetchMetric())
+                );
                 builder.field(Fields.FETCH_CURRENT, searchCoordinatorStats.getFetchCurrent());
                 builder.field(Fields.FETCH_TOTAL, searchCoordinatorStats.getFetchTotal());
 
-                builder.humanReadableField(Fields.EXPAND_TIME_IN_MILLIS, Fields.FETCH_TIME, new TimeValue(searchCoordinatorStats.getExpandSearchMetric()));
+                builder.humanReadableField(
+                    Fields.EXPAND_TIME_IN_MILLIS,
+                    Fields.FETCH_TIME,
+                    new TimeValue(searchCoordinatorStats.getExpandSearchMetric())
+                );
                 builder.field(Fields.EXPAND_CURRENT, searchCoordinatorStats.getExpandSearchCurrent());
                 builder.field(Fields.EXPAND_TOTAL, searchCoordinatorStats.getExpandSearchTotal());
 
@@ -540,7 +558,7 @@ public class SearchStats implements Writeable, ToXContentFragment {
         static final String CANMATCH_TOTAL = "dfs_prequery_total";
         static final String EXPAND_TIME_IN_MILLIS = "expand_time_in_millis";
         static final String EXPAND_CURRENT = "expand_current";
-        static final String EXPAND_TOTAL= "expand_total";
+        static final String EXPAND_TOTAL = "expand_total";
     }
 
     @Override
