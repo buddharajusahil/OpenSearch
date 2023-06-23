@@ -966,11 +966,24 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
             exc -> {
             }
         );
+        MockSearchPhaseContext mockSearchPhaseContext = new MockSearchPhaseContext(1);
+        QueryPhaseResultConsumer results = controller.newSearchPhaseResults(
+            OpenSearchExecutors.newDirectExecutorService(),
+            new NoopCircuitBreaker(CircuitBreaker.REQUEST),
+            SearchProgressListener.NOOP,
+            mockSearchPhaseContext.getRequest(),
+            1,
+            exc -> {}
+        );
 
 
         Thread[] threads = new Thread[numTasks];
         Phaser phaser = new Phaser(numTasks + 1);
         CountDownLatch countDownLatch = new CountDownLatch(numTasks);
+
+        Thread[] threadsFetch = new Thread[numTasks];
+        Phaser phaserFetch = new Phaser(numTasks + 1);
+        CountDownLatch countDownLatchFetch = new CountDownLatch(numTasks);
 
         for (int i = 0; i < numTasks; i++) {
             SearchQueryThenFetchAsyncAction newAction = new SearchQueryThenFetchAsyncAction(
@@ -998,14 +1011,44 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
                 countDownLatch.countDown();
             });
             threads[i].start();
+
+            FetchSearchPhase fetchPhase = new FetchSearchPhase(
+                results,
+                controller,
+                null,
+                mockSearchPhaseContext,
+                (searchResponse, scrollId) -> new SearchPhase("test") {
+                    @Override
+                    public void run() {
+                        mockSearchPhaseContext.sendSearchResponse(searchResponse, null);
+                    }
+                }
+            );
+            ShardId shardId = new ShardId(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLength(10), randomInt());
+            SearchShardIterator searchShardIterator = new SearchShardIterator(null, shardId, Collections.emptyList(), OriginalIndices.NONE);
+            searchShardIterator.resetAndSkip();
+            newAction.skipShard(searchShardIterator);
+
+            threadsFetch[i] = new Thread(() -> {
+                phaserFetch.arriveAndAwaitAdvance();
+                newAction.executeNextPhase(newAction, fetchPhase);
+                countDownLatchFetch.countDown();
+            });
+            threadsFetch[i].start();
         }
         phaser.arriveAndAwaitAdvance();
         countDownLatch.await();
         assertEquals(numTasks * 2, queryPhaseStart.get());
 
+        phaserFetch.arriveAndAwaitAdvance();
+        countDownLatchFetch.await();
+
+        assertEquals(numTasks * 2, queryPhaseEnd.get());
+        assertEquals(numTasks * 2, fetchPhaseStart.get());
         Thread[] threadsDFS = new Thread[numTasks];
         Phaser phaserDFS = new Phaser(numTasks + 1);
         CountDownLatch countDownLatchDFS = new CountDownLatch(numTasks);
+
         for (int i = 0; i < numTasks; i++) {
             SearchDfsQueryThenFetchAsyncAction newAction = new SearchDfsQueryThenFetchAsyncAction(
                 logger,
@@ -1032,10 +1075,13 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
                 countDownLatchDFS.countDown();
             });
             threadsDFS[i].start();
+
+
         }
         phaserDFS.arriveAndAwaitAdvance();
         countDownLatchDFS.await();
         assertEquals(numTasks * 2, dfsPreQueryPhaseStart.get());
+
     }
     private CountDownLatch runActionsConcurrently(List<? extends AbstractSearchAsyncAction<SearchPhaseResult>> listOfActions) {
         Thread[] threads = new Thread[5];
