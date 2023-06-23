@@ -436,8 +436,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
         }
     }
 
-    private void onPhaseEnd(SearchPhaseContext searchPhaseContext) {
-
+    public void onPhaseEnd(SearchPhaseContext searchPhaseContext) {
         if (searchRequestOperationsListener == null) {
             return;
         }
@@ -455,7 +454,7 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             searchRequestOperationsListener.onExpandSearchPhaseEnd(searchPhaseContext, tookTimeInMillis);
         }
     }
-    private void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
+    public void onPhaseStart (SearchPhase phase, SearchPhaseContext searchPhaseContext) {
         setCurrentPhase(phase);
         phase.setStartTimeInNanos(System.nanoTime());
         if (searchRequestOperationsListener == null) {
