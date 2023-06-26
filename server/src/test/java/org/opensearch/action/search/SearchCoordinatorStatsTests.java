@@ -8,7 +8,6 @@
 
 package org.opensearch.action.search;
 
-import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.concurrent.CountDownLatch;
@@ -68,7 +67,6 @@ public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
         long tookTime = 10;
         int numTasks = randomIntBetween(5, 50);
 
-
         Thread[] threads = new Thread[numTasks];
         Phaser phaser = new Phaser(numTasks + 1);
         CountDownLatch countDownLatch = new CountDownLatch(numTasks);
@@ -94,26 +92,16 @@ public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
 
         assertEquals(numTasks, testCoordinatorStats.getDFSPreQueryTotal());
         assertEquals(numTasks * tookTime, testCoordinatorStats.getDFSPreQueryMetric());
-        assertEquals(numTasks, testCoordinatorStats.getDFSPreQueryTotal());
-        assertEquals(numTasks * tookTime, testCoordinatorStats.getDFSPreQueryMetric());
 
-        assertEquals(numTasks, testCoordinatorStats.getCanMatchTotal());
-        assertEquals(numTasks * tookTime, testCoordinatorStats.getCanMatchMetric());
         assertEquals(numTasks, testCoordinatorStats.getCanMatchTotal());
         assertEquals(numTasks * tookTime, testCoordinatorStats.getCanMatchMetric());
 
         assertEquals(numTasks, testCoordinatorStats.getQueryTotal());
         assertEquals(numTasks * tookTime, testCoordinatorStats.getQueryMetric());
-        assertEquals(numTasks, testCoordinatorStats.getQueryTotal());
-        assertEquals(numTasks * tookTime, testCoordinatorStats.getQueryMetric());
 
         assertEquals(numTasks, testCoordinatorStats.getFetchTotal());
         assertEquals(numTasks * tookTime, testCoordinatorStats.getFetchMetric());
-        assertEquals(numTasks, testCoordinatorStats.getFetchTotal());
-        assertEquals(numTasks * tookTime, testCoordinatorStats.getFetchMetric());
 
-        assertEquals(numTasks, testCoordinatorStats.getExpandSearchTotal());
-        assertEquals(numTasks * tookTime, testCoordinatorStats.getExpandSearchMetric());
         assertEquals(numTasks, testCoordinatorStats.getExpandSearchTotal());
         assertEquals(numTasks * tookTime, testCoordinatorStats.getExpandSearchMetric());
     }

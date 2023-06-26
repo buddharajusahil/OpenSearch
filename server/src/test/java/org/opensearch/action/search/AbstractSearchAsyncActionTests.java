@@ -82,7 +82,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,7 +99,6 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
     private final List<Tuple<String, String>> resolvedNodes = new ArrayList<>();
     private final Set<ShardSearchContextId> releasedContexts = new CopyOnWriteArraySet<>();
     private ExecutorService executor;
-
     ThreadPool threadPool;
 
     @Before
@@ -883,6 +881,6 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         public AtomicInteger expandPhaseFailure = new AtomicInteger();
         public AtomicInteger expandPhaseEnd = new AtomicInteger();
 
-        public SearchCoordinatorStatsTesting () {};
+        public SearchCoordinatorStatsTesting() {};
     }
 }
