@@ -723,6 +723,19 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
 
     @Override
     public final void onPhaseFailure(SearchPhase phase, String msg, Throwable cause) {
+        if (searchRequestOperationsListener != null) {
+            if (this.currentPhase instanceof SearchDfsQueryThenFetchAsyncAction) {
+                searchRequestOperationsListener.onDFSPreQueryPhaseFailure(this);
+            } else if (this.currentPhase instanceof CanMatchPreFilterSearchPhase) {
+                searchRequestOperationsListener.onCanMatchPhaseFailure(this);
+            } else if (this.currentPhase instanceof SearchQueryThenFetchAsyncAction) {
+                searchRequestOperationsListener.onQueryPhaseFailure(this);
+            } else if (this.currentPhase instanceof FetchSearchPhase) {
+                searchRequestOperationsListener.onFetchPhaseFailure(this);
+            } else if (this.currentPhase instanceof ExpandSearchPhase) {
+                searchRequestOperationsListener.onExpandSearchPhaseFailure(this);
+            }
+        }
         raisePhaseFailure(new SearchPhaseExecutionException(phase.getName(), msg, cause, buildShardFailures()));
     }
 

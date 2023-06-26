@@ -550,114 +550,9 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         assertThat(searchResponse.getSuccessfulShards(), equalTo(shards.length));
     }
 
-    public void testSearchRequestListeners() throws InterruptedException {
-        AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
-        AtomicInteger dfsPreQueryPhaseFailure = new AtomicInteger();
-        AtomicInteger dfsPreQueryPhaseEnd = new AtomicInteger();
-        AtomicInteger canMatchPhaseStart = new AtomicInteger();
-        AtomicInteger canMatchPhaseFailure = new AtomicInteger();
-        AtomicInteger canMatchPhaseEnd = new AtomicInteger();
-        AtomicInteger queryPhaseStart = new AtomicInteger();
-        AtomicInteger queryPhaseFailure = new AtomicInteger();
-        AtomicInteger queryPhaseEnd = new AtomicInteger();
-        AtomicInteger fetchPhaseStart = new AtomicInteger();
-        AtomicInteger fetchPhaseFailure = new AtomicInteger();
-        AtomicInteger fetchPhaseEnd = new AtomicInteger();
-        AtomicInteger expandPhaseStart = new AtomicInteger();
-        AtomicInteger expandPhaseFailure = new AtomicInteger();
-        AtomicInteger expandPhaseEnd = new AtomicInteger();
-        AtomicInteger timeInNanos = new AtomicInteger(randomIntBetween(0, 10));
-        SearchRequestOperationsListener testListener = new SearchRequestOperationsListener() {
-            @Override
-            public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                dfsPreQueryPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                dfsPreQueryPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                dfsPreQueryPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                canMatchPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                canMatchPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                canMatchPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                queryPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                queryPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                queryPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                fetchPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                fetchPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                fetchPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                expandPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                expandPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                expandPhaseEnd.incrementAndGet();
-            }
-        };
+    public void testSearchRequestListeners() {
+        SearchCoordinatorStatsTesting searchCoordinatorStatsTesting = new SearchCoordinatorStatsTesting();
+        SearchRequestOperationsListener testListener = createSearchRequestOperationsListener(searchCoordinatorStatsTesting);
         final List<SearchRequestOperationsListener> requestOperationListeners = new ArrayList<>(Arrays.asList(testListener, testListener));
 
         SearchQueryThenFetchAsyncAction action = createSearchQueryThenFetchAsyncAction();
@@ -670,7 +565,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         canMatchPreFilterSearchPhaseAction.setSearchListenerList(requestOperationListeners);
 
         action.start();
-        assertEquals(2, queryPhaseStart.get());
+        assertEquals(2, searchCoordinatorStatsTesting.queryPhaseStart.get());
 
         FetchSearchPhase fetchPhase = createFetchSearchPhase();
         ShardId shardId = new ShardId(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLength(10), randomInt());
@@ -679,7 +574,7 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         action.skipShard(searchShardIterator);
         action.executeNextPhase(action, fetchPhase);
 
-        assertEquals(2, queryPhaseEnd.get());
+        assertEquals(2, searchCoordinatorStatsTesting.queryPhaseEnd.get());
 
         searchDfsQueryThenFetchAsyncAction.start();
         searchDfsQueryThenFetchAsyncAction.skipShard(searchShardIterator);
@@ -687,225 +582,28 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
 
         canMatchPreFilterSearchPhaseAction.start();
 
-        assertEquals(2, dfsPreQueryPhaseStart.get());
-        assertEquals(2, dfsPreQueryPhaseEnd.get());
-        assertEquals(2, canMatchPhaseStart.get());
-        assertEquals(4, fetchPhaseStart.get());
+        assertEquals(2, searchCoordinatorStatsTesting.dfsPreQueryPhaseStart.get());
+        assertEquals(2, searchCoordinatorStatsTesting.dfsPreQueryPhaseEnd.get());
+        assertEquals(2, searchCoordinatorStatsTesting.canMatchPhaseStart.get());
+        assertEquals(4, searchCoordinatorStatsTesting.fetchPhaseStart.get());
 
         ExpandSearchPhase expandPhase = createExpandSearchPhase();
         action.executeNextPhase(fetchPhase, expandPhase);
-        assertEquals(2, expandPhaseStart.get());
+        assertEquals(2, searchCoordinatorStatsTesting.expandPhaseStart.get());
 
         action.sendSearchResponse(InternalSearchResponse.empty(), null);
     }
 
-    public void testMultiThreadCoordinateStats() throws InterruptedException {
-        AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
-        AtomicInteger dfsPreQueryPhaseFailure = new AtomicInteger();
-        AtomicInteger dfsPreQueryPhaseEnd = new AtomicInteger();
-        AtomicInteger canMatchPhaseStart = new AtomicInteger();
-        AtomicInteger canMatchPhaseFailure = new AtomicInteger();
-        AtomicInteger canMatchPhaseEnd = new AtomicInteger();
-        AtomicInteger queryPhaseStart = new AtomicInteger();
-        AtomicInteger queryPhaseFailure = new AtomicInteger();
-        AtomicInteger queryPhaseEnd = new AtomicInteger();
-        AtomicInteger fetchPhaseStart = new AtomicInteger();
-        AtomicInteger fetchPhaseFailure = new AtomicInteger();
-        AtomicInteger fetchPhaseEnd = new AtomicInteger();
-        AtomicInteger expandPhaseStart = new AtomicInteger();
-        AtomicInteger expandPhaseFailure = new AtomicInteger();
-        AtomicInteger expandPhaseEnd = new AtomicInteger();
-        SearchRequestOperationsListener testListener = new SearchRequestOperationsListener() {
-            @Override
-            public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                dfsPreQueryPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                dfsPreQueryPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                dfsPreQueryPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                canMatchPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                canMatchPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                canMatchPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                queryPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                queryPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                queryPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                fetchPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                fetchPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                fetchPhaseEnd.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseStart(SearchPhaseContext context) {
-                assertNotNull(context);
-                expandPhaseStart.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
-                assertNotNull(context);
-                expandPhaseFailure.incrementAndGet();
-            }
-
-            @Override
-            public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
-                assertNotNull(context);
-                expandPhaseEnd.incrementAndGet();
-            }
-        };
-        final List<SearchRequestOperationsListener> requestOperationListeners = new ArrayList<>(Arrays.asList(testListener, testListener));
-
-        int numTasks = randomIntBetween(5, 50);
-
-        Thread[] threads = new Thread[numTasks];
-        Phaser phaser = new Phaser(numTasks + 1);
-        CountDownLatch countDownLatch = new CountDownLatch(numTasks);
-
-        // Search query, fetch, expand search
-        for (int i = 0; i < numTasks; i++) {
-            SearchQueryThenFetchAsyncAction newAction = createSearchQueryThenFetchAsyncAction();
-            newAction.setSearchListenerList(requestOperationListeners);
-
-            // Fetch after search query then fetch
-            FetchSearchPhase fetchPhase = createFetchSearchPhase();
-            ShardId shardId = new ShardId(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLength(10), randomInt());
-            SearchShardIterator searchShardIterator = new SearchShardIterator(null, shardId, Collections.emptyList(), OriginalIndices.NONE);
-            searchShardIterator.resetAndSkip();
-            newAction.skipShard(searchShardIterator);
-            ExpandSearchPhase expandPhase = createExpandSearchPhase();
-
-            threads[i] = new Thread(() -> {
-                phaser.arriveAndAwaitAdvance();
-                newAction.start();
-                newAction.executeNextPhase(newAction, fetchPhase);
-                newAction.executeNextPhase(fetchPhase, expandPhase);
-                newAction.sendSearchResponse(InternalSearchResponse.empty(), null);
-                countDownLatch.countDown();
-            });
-            threads[i].start();
-        }
-        phaser.arriveAndAwaitAdvance();
-        countDownLatch.await();
-        assertEquals(numTasks * 2, queryPhaseStart.get());
-        assertEquals(numTasks * 2, queryPhaseEnd.get());
-        assertEquals(numTasks * 2, fetchPhaseStart.get());
-        assertEquals(numTasks * 2, expandPhaseStart.get());
-        assertEquals(numTasks * 2, expandPhaseEnd.get());
-
-        // Search dfs query then fetch action
-        Thread[] threadsDFS = new Thread[numTasks];
-        Phaser phaserDFS = new Phaser(numTasks + 1);
-        CountDownLatch countDownLatchDFS = new CountDownLatch(numTasks);
-
-        for (int i = 0; i < numTasks; i++) {
-            SearchDfsQueryThenFetchAsyncAction newAction = createSearchDfsQueryThenFetchAsyncAction();
-            newAction.setSearchListenerList(requestOperationListeners);
-            FetchSearchPhase fetchPhaseDFS = createFetchSearchPhase();
-            ShardId shardId = new ShardId(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLength(10), randomInt());
-            SearchShardIterator searchShardIterator = new SearchShardIterator(null, shardId, Collections.emptyList(), OriginalIndices.NONE);
-            searchShardIterator.resetAndSkip();
-            newAction.skipShard(searchShardIterator);
-            threadsDFS[i] = new Thread(() -> {
-                phaserDFS.arriveAndAwaitAdvance();
-                newAction.start();
-                newAction.executeNextPhase(newAction, fetchPhaseDFS);
-                countDownLatchDFS.countDown();
-            });
-            threadsDFS[i].start();
-        }
-        phaserDFS.arriveAndAwaitAdvance();
-        countDownLatchDFS.await();
-        assertEquals(numTasks * 2, dfsPreQueryPhaseStart.get());
-        assertEquals(numTasks * 2, dfsPreQueryPhaseEnd.get());
-        assertEquals(numTasks * 2 * 2, fetchPhaseStart.get());
-        assertEquals(numTasks * 2, fetchPhaseEnd.get());
-    }
-
     private SearchDfsQueryThenFetchAsyncAction createSearchDfsQueryThenFetchAsyncAction() {
-        final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
-            0,
-            System.nanoTime(),
-            System::nanoTime
-        );
-        SearchTransportService searchTransportService = new SearchTransportService(null, null);
-        Map<String, Transport.Connection> lookup = new ConcurrentHashMap<>();
         SearchPhaseController controller = new SearchPhaseController(
             writableRegistry(),
             r -> InternalAggregationTestCase.emptyReduceContextBuilder()
         );
-        final SearchRequest searchRequest = new SearchRequest();
-        searchRequest.allowPartialSearchResults(false);
-
-        int numConcurrent = randomIntBetween(1, 4);
-        searchRequest.setMaxConcurrentShardRequests(numConcurrent);
-        searchRequest.setBatchedReduceSize(2);
-        searchRequest.source(new SearchSourceBuilder().size(1).sort(SortBuilders.fieldSort("timestamp")));
+        SearchRequest searchRequest = new SearchRequest().allowPartialSearchResults(true);
         SearchTask task = new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap());
-        int numShards = 1;
         Executor executor = OpenSearchExecutors.newDirectExecutorService();
-        DiscoveryNode primaryNode = new DiscoveryNode("node_1", buildNewFakeTransportAddress(), Version.CURRENT);
-        DiscoveryNode replicaNode = new DiscoveryNode("node_2", buildNewFakeTransportAddress(), Version.CURRENT);
-        GroupShardsIterator<SearchShardIterator> shardsIter = SearchAsyncActionTests.getShardsIter(
-            "idx",
-            new OriginalIndices(new String[] { "idx" }, SearchRequest.DEFAULT_INDICES_OPTIONS),
-            numShards,
-            randomBoolean(),
-            primaryNode,
-            replicaNode
-        );
+        SearchShardIterator shards = new SearchShardIterator(null, null, Collections.emptyList(), null);
+        GroupShardsIterator<SearchShardIterator> shardsIter = new GroupShardsIterator<>(List.of(shards));
         QueryPhaseResultConsumer resultConsumer = new QueryPhaseResultConsumer(
             searchRequest,
             executor,
@@ -918,18 +616,18 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         );
         return new SearchDfsQueryThenFetchAsyncAction(
             logger,
-            searchTransportService,
-            (clusterAlias, node) -> lookup.get(node),
-            Collections.singletonMap("_na_", new AliasFilter(null, Strings.EMPTY_ARRAY)),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            controller,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             executor,
             resultConsumer,
             searchRequest,
             null,
             shardsIter,
-            timeProvider,
+            null,
             null,
             task,
             SearchResponse.Clusters.EMPTY
@@ -937,37 +635,15 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
     }
 
     private SearchQueryThenFetchAsyncAction createSearchQueryThenFetchAsyncAction() {
-        final TransportSearchAction.SearchTimeProvider timeProvider = new TransportSearchAction.SearchTimeProvider(
-            0,
-            System.nanoTime(),
-            System::nanoTime
-        );
-        SearchTransportService searchTransportService = new SearchTransportService(null, null);
-        Map<String, Transport.Connection> lookup = new ConcurrentHashMap<>();
         SearchPhaseController controller = new SearchPhaseController(
             writableRegistry(),
             r -> InternalAggregationTestCase.emptyReduceContextBuilder()
         );
-        final SearchRequest searchRequest = new SearchRequest();
-        searchRequest.allowPartialSearchResults(false);
-
-        int numConcurrent = randomIntBetween(1, 4);
-        searchRequest.setMaxConcurrentShardRequests(numConcurrent);
-        searchRequest.setBatchedReduceSize(2);
-        searchRequest.source(new SearchSourceBuilder().size(1).sort(SortBuilders.fieldSort("timestamp")));
+        SearchRequest searchRequest = new SearchRequest().allowPartialSearchResults(true);
         SearchTask task = new SearchTask(0, "n/a", "n/a", () -> "test", null, Collections.emptyMap());
-        int numShards = 1;
         Executor executor = OpenSearchExecutors.newDirectExecutorService();
-        DiscoveryNode primaryNode = new DiscoveryNode("node_1", buildNewFakeTransportAddress(), Version.CURRENT);
-        DiscoveryNode replicaNode = new DiscoveryNode("node_2", buildNewFakeTransportAddress(), Version.CURRENT);
-        GroupShardsIterator<SearchShardIterator> shardsIter = SearchAsyncActionTests.getShardsIter(
-            "idx",
-            new OriginalIndices(new String[] { "idx" }, SearchRequest.DEFAULT_INDICES_OPTIONS),
-            numShards,
-            randomBoolean(),
-            primaryNode,
-            replicaNode
-        );
+        SearchShardIterator shards = new SearchShardIterator(null, null, Collections.emptyList(), null);
+        GroupShardsIterator<SearchShardIterator> shardsIter = new GroupShardsIterator<>(List.of(shards));
         QueryPhaseResultConsumer resultConsumer = new QueryPhaseResultConsumer(
             searchRequest,
             executor,
@@ -980,18 +656,18 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         );
         return new SearchQueryThenFetchAsyncAction(
             logger,
-            searchTransportService,
-            (clusterAlias, node) -> lookup.get(node),
-            Collections.singletonMap("_na_", new AliasFilter(null, Strings.EMPTY_ARRAY)),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            controller,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             executor,
             resultConsumer,
             searchRequest,
             null,
             shardsIter,
-            timeProvider,
+            null,
             null,
             task,
             SearchResponse.Clusters.EMPTY
@@ -1088,9 +764,125 @@ public class AbstractSearchAsyncActionTests extends OpenSearchTestCase {
         return new ExpandSearchPhase(mockSearchPhaseContext, internalSearchResponse, null);
     }
 
+    private SearchRequestOperationsListener createSearchRequestOperationsListener(
+        SearchCoordinatorStatsTesting searchCoordinatorStatsTesting
+    ) {
+        return new SearchRequestOperationsListener() {
+            @Override
+            public void onDFSPreQueryPhaseStart(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.dfsPreQueryPhaseStart.incrementAndGet();
+            }
+
+            @Override
+            public void onDFSPreQueryPhaseFailure(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.dfsPreQueryPhaseFailure.incrementAndGet();
+            }
+
+            @Override
+            public void onDFSPreQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.dfsPreQueryPhaseEnd.incrementAndGet();
+            }
+
+            @Override
+            public void onCanMatchPhaseStart(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.canMatchPhaseStart.incrementAndGet();
+            }
+
+            @Override
+            public void onCanMatchPhaseFailure(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.canMatchPhaseFailure.incrementAndGet();
+            }
+
+            @Override
+            public void onCanMatchPhaseEnd(SearchPhaseContext context, long tookTime) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.canMatchPhaseEnd.incrementAndGet();
+            }
+
+            @Override
+            public void onQueryPhaseStart(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.queryPhaseStart.incrementAndGet();
+            }
+
+            @Override
+            public void onQueryPhaseFailure(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.queryPhaseFailure.incrementAndGet();
+            }
+
+            @Override
+            public void onQueryPhaseEnd(SearchPhaseContext context, long tookTime) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.queryPhaseEnd.incrementAndGet();
+            }
+
+            @Override
+            public void onFetchPhaseStart(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.fetchPhaseStart.incrementAndGet();
+            }
+
+            @Override
+            public void onFetchPhaseFailure(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.fetchPhaseFailure.incrementAndGet();
+            }
+
+            @Override
+            public void onFetchPhaseEnd(SearchPhaseContext context, long tookTime) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.fetchPhaseEnd.incrementAndGet();
+            }
+
+            @Override
+            public void onExpandSearchPhaseStart(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.expandPhaseStart.incrementAndGet();
+            }
+
+            @Override
+            public void onExpandSearchPhaseFailure(SearchPhaseContext context) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.expandPhaseFailure.incrementAndGet();
+            }
+
+            @Override
+            public void onExpandSearchPhaseEnd(SearchPhaseContext context, long tookTime) {
+                assertNotNull(context);
+                searchCoordinatorStatsTesting.expandPhaseEnd.incrementAndGet();
+            }
+        };
+    }
+
     private static final class PhaseResult extends SearchPhaseResult {
         PhaseResult(ShardSearchContextId contextId) {
             this.contextId = contextId;
         }
+    }
+
+    private static final class SearchCoordinatorStatsTesting {
+        public AtomicInteger dfsPreQueryPhaseStart = new AtomicInteger();
+        public AtomicInteger dfsPreQueryPhaseFailure = new AtomicInteger();
+        public AtomicInteger dfsPreQueryPhaseEnd = new AtomicInteger();
+        public AtomicInteger canMatchPhaseStart = new AtomicInteger();
+        public AtomicInteger canMatchPhaseFailure = new AtomicInteger();
+        public AtomicInteger canMatchPhaseEnd = new AtomicInteger();
+        public AtomicInteger queryPhaseStart = new AtomicInteger();
+        public AtomicInteger queryPhaseFailure = new AtomicInteger();
+        public AtomicInteger queryPhaseEnd = new AtomicInteger();
+        public AtomicInteger fetchPhaseStart = new AtomicInteger();
+        public AtomicInteger fetchPhaseFailure = new AtomicInteger();
+        public AtomicInteger fetchPhaseEnd = new AtomicInteger();
+        public AtomicInteger expandPhaseStart = new AtomicInteger();
+        public AtomicInteger expandPhaseFailure = new AtomicInteger();
+        public AtomicInteger expandPhaseEnd = new AtomicInteger();
+
+        public SearchCoordinatorStatsTesting () {};
     }
 }

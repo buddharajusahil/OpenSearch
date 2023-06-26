@@ -8,7 +8,11 @@
 
 package org.opensearch.action.search;
 
+import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.test.OpenSearchTestCase;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
 
 public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
     public void testSearchCoordinatorStats() {
@@ -56,6 +60,61 @@ public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
         assertEquals(0, testCoordinatorStats.getExpandSearchCurrent());
         assertEquals(1, testCoordinatorStats.getExpandSearchTotal());
         assertEquals(tookTime, testCoordinatorStats.getExpandSearchMetric());
+    }
 
+    public void testSearchCoordinatorStatsMulti() throws InterruptedException {
+        SearchCoordinatorStats testCoordinatorStats = new SearchCoordinatorStats();
+        SearchPhaseContext ctx = new MockSearchPhaseContext(1);
+        long tookTime = 10;
+        int numTasks = randomIntBetween(5, 50);
+
+
+        Thread[] threads = new Thread[numTasks];
+        Phaser phaser = new Phaser(numTasks + 1);
+        CountDownLatch countDownLatch = new CountDownLatch(numTasks);
+        for (int i = 0; i < numTasks; i++) {
+            threads[i] = new Thread(() -> {
+                phaser.arriveAndAwaitAdvance();
+                testCoordinatorStats.onDFSPreQueryPhaseStart(ctx);
+                testCoordinatorStats.onDFSPreQueryPhaseEnd(ctx, tookTime);
+                testCoordinatorStats.onCanMatchPhaseStart(ctx);
+                testCoordinatorStats.onCanMatchPhaseEnd(ctx, tookTime);
+                testCoordinatorStats.onQueryPhaseStart(ctx);
+                testCoordinatorStats.onQueryPhaseEnd(ctx, tookTime);
+                testCoordinatorStats.onFetchPhaseStart(ctx);
+                testCoordinatorStats.onFetchPhaseEnd(ctx, tookTime);
+                testCoordinatorStats.onExpandSearchPhaseStart(ctx);
+                testCoordinatorStats.onExpandSearchPhaseEnd(ctx, tookTime);
+                countDownLatch.countDown();
+            });
+            threads[i].start();
+        }
+        phaser.arriveAndAwaitAdvance();
+        countDownLatch.await();
+
+        assertEquals(numTasks, testCoordinatorStats.getDFSPreQueryTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getDFSPreQueryMetric());
+        assertEquals(numTasks, testCoordinatorStats.getDFSPreQueryTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getDFSPreQueryMetric());
+
+        assertEquals(numTasks, testCoordinatorStats.getCanMatchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getCanMatchMetric());
+        assertEquals(numTasks, testCoordinatorStats.getCanMatchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getCanMatchMetric());
+
+        assertEquals(numTasks, testCoordinatorStats.getQueryTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getQueryMetric());
+        assertEquals(numTasks, testCoordinatorStats.getQueryTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getQueryMetric());
+
+        assertEquals(numTasks, testCoordinatorStats.getFetchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getFetchMetric());
+        assertEquals(numTasks, testCoordinatorStats.getFetchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getFetchMetric());
+
+        assertEquals(numTasks, testCoordinatorStats.getExpandSearchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getExpandSearchMetric());
+        assertEquals(numTasks, testCoordinatorStats.getExpandSearchTotal());
+        assertEquals(numTasks * tookTime, testCoordinatorStats.getExpandSearchMetric());
     }
 }
