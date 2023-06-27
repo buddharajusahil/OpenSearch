@@ -112,6 +112,7 @@ public class SearchStats implements Writeable, ToXContentFragment {
             long suggestTimeInMillis,
             long suggestCurrent
         ) {
+            this.searchCoordinatorStats = new SearchCoordinatorStats();
             this.queryCount = queryCount;
             this.queryTimeInMillis = queryTimeInMillis;
             this.queryCurrent = queryCurrent;

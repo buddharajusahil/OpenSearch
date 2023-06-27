@@ -22,6 +22,8 @@ import java.util.function.Consumer;
 public final class SearchCoordinatorStats implements SearchRequestOperationsListener {
     public StatsHolder totalStats = new StatsHolder();
 
+    public boolean hasBeenCoordinator = false;
+
     // private final CounterMetric openContexts = new CounterMetric();
 
     // private volatile Map<String, StatsHolder> groupStats = emptyMap();
@@ -90,6 +92,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     }
 
     private void computeStats(SearchPhaseContext searchPhaseContext, Consumer<StatsHolder> consumer) {
+        hasBeenCoordinator = true;
         consumer.accept(totalStats);
     }
 
