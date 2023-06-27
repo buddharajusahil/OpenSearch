@@ -553,9 +553,9 @@ public class SearchStats implements Writeable, ToXContentFragment {
         static final String DFS_PREQUERY_TIME_IN_MILLIS = "dfs_prequery_time_in_millis";
         static final String DFS_PREQUERY_CURRENT = "dfs_prequery_current";
         static final String DFS_PREQUERY_TOTAL = "dfs_prequery_total";
-        static final String CANMATCH_TIME_IN_MILLIS = "dfs_prequery_time_in_millis";
-        static final String CANMATCH_CURRENT = "dfs_prequery_current";
-        static final String CANMATCH_TOTAL = "dfs_prequery_total";
+        static final String CANMATCH_TIME_IN_MILLIS = "canmatch_time_in_millis";
+        static final String CANMATCH_CURRENT = "canmatch_current";
+        static final String CANMATCH_TOTAL = "canmatch_total";
         static final String EXPAND_TIME_IN_MILLIS = "expand_time_in_millis";
         static final String EXPAND_CURRENT = "expand_current";
         static final String EXPAND_TOTAL = "expand_total";
