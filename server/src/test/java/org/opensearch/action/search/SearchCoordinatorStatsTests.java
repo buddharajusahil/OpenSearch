@@ -68,26 +68,46 @@ public class SearchCoordinatorStatsTests extends OpenSearchTestCase {
         int numTasks = randomIntBetween(5, 50);
 
         Thread[] threads = new Thread[numTasks];
-        Phaser phaser = new Phaser(numTasks + 1);
+
+        Phaser phaser = new Phaser(numTasks);
+
         CountDownLatch countDownLatch = new CountDownLatch(numTasks);
         for (int i = 0; i < numTasks; i++) {
             threads[i] = new Thread(() -> {
                 phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onDFSPreQueryPhaseStart(ctx);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onDFSPreQueryPhaseEnd(ctx, tookTime);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onCanMatchPhaseStart(ctx);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onCanMatchPhaseEnd(ctx, tookTime);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onQueryPhaseStart(ctx);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onQueryPhaseEnd(ctx, tookTime);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onFetchPhaseStart(ctx);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onFetchPhaseEnd(ctx, tookTime);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onExpandSearchPhaseStart(ctx);
+
+                phaser.arriveAndAwaitAdvance();
                 testCoordinatorStats.onExpandSearchPhaseEnd(ctx, tookTime);
                 countDownLatch.countDown();
             });
             threads[i].start();
         }
-        phaser.arriveAndAwaitAdvance();
+
         countDownLatch.await();
 
         assertEquals(numTasks, testCoordinatorStats.getDFSPreQueryTotal());
