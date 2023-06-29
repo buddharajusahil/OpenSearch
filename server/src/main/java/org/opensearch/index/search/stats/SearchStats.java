@@ -440,6 +440,7 @@ public class SearchStats implements Writeable, ToXContentFragment {
     public void setSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
         totalStats.searchCoordinatorStats = searchCoordinatorStats;
     }
+
     public void setHasBeenCoordinator(boolean bool) {
         totalStats.hasBeenCoordinator = bool;
     }

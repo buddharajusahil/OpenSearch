@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 public final class SearchCoordinatorStats implements SearchRequestOperationsListener {
     public StatsHolder totalStats = new StatsHolder();
 
-
     // private final CounterMetric openContexts = new CounterMetric();
 
     // private volatile Map<String, StatsHolder> groupStats = emptyMap();
