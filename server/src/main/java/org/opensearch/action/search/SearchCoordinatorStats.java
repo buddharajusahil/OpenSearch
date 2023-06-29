@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 public final class SearchCoordinatorStats implements SearchRequestOperationsListener {
     public StatsHolder totalStats = new StatsHolder();
 
-    public boolean hasBeenCoordinator = false;
 
     // private final CounterMetric openContexts = new CounterMetric();
 
@@ -92,7 +91,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
     }
 
     private void computeStats(SearchPhaseContext searchPhaseContext, Consumer<StatsHolder> consumer) {
-        hasBeenCoordinator = true;
+        totalStats.hasComputed = true;
         consumer.accept(totalStats);
     }
 
@@ -207,6 +206,7 @@ public final class SearchCoordinatorStats implements SearchRequestOperationsList
         public MeanMetric expandSearchMetric = new MeanMetric();
         public CounterMetric expandSearchCurrent = new CounterMetric();
         public CounterMetric expandSearchTotal = new CounterMetric();
+        public boolean hasComputed = false;
     }
 
 }

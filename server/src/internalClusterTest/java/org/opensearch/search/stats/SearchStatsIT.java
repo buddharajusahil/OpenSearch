@@ -168,7 +168,7 @@ public class SearchStatsIT extends OpenSearchIntegTestCase {
 
         for (NodeStats stat : nodeStats.getNodes()) {
             Stats total = stat.getIndices().getSearch().getTotal();
-            if (total.getSearchCoordinatorStats().hasBeenCoordinator) {
+            if (total.hasBeenCoordinator) {
                 assertThat(total.getSearchCoordinatorStats().getQueryMetric(), greaterThan(0L));
                 assertThat(total.getSearchCoordinatorStats().getQueryTotal(), greaterThan(0L));
                 assertThat(total.getSearchCoordinatorStats().getFetchMetric(), greaterThan(0L));

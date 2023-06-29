@@ -83,6 +83,7 @@ public class SearchStats implements Writeable, ToXContentFragment {
         private long pitCount;
         private long pitTimeInMillis;
         private long pitCurrent;
+        public boolean hasBeenCoordinator = false;
 
         @Nullable
         private SearchCoordinatorStats searchCoordinatorStats;
@@ -438,6 +439,9 @@ public class SearchStats implements Writeable, ToXContentFragment {
     // Set the different Coordinator Stats fields in here
     public void setSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
         totalStats.searchCoordinatorStats = searchCoordinatorStats;
+    }
+    public void setHasBeenCoordinator(boolean bool) {
+        totalStats.hasBeenCoordinator = bool;
     }
 
     public SearchStats(Stats totalStats, long openContexts, @Nullable Map<String, Stats> groupStats) {
