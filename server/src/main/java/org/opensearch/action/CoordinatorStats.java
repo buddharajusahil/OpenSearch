@@ -27,7 +27,4 @@ public final class CoordinatorStats {
         return searchCoordinatorStats;
     }
 
-    public void setSearchCoordinatorStats(SearchCoordinatorStats searchCoordinatorStats) {
-        this.searchCoordinatorStats = searchCoordinatorStats;
-    }
 }

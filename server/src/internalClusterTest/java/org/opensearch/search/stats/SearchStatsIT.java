@@ -165,27 +165,27 @@ public class SearchStatsIT extends OpenSearchIntegTestCase {
 
         Set<String> nodeIdsWithIndex = nodeIdsWithIndex("test1", "test2");
         int num = 0;
+        int coordNumber = 0;
 
         for (NodeStats stat : nodeStats.getNodes()) {
             Stats total = stat.getIndices().getSearch().getTotal();
-            if (total.hasBeenCoordinator) {
-                assertThat(total.getSearchCoordinatorStats().getQueryMetric(), greaterThan(0L));
-                assertThat(total.getSearchCoordinatorStats().getQueryTotal(), greaterThan(0L));
-                assertThat(total.getSearchCoordinatorStats().getFetchMetric(), greaterThan(0L));
-                assertThat(total.getSearchCoordinatorStats().getFetchTotal(), greaterThan(0L));
-                assertThat(total.getSearchCoordinatorStats().getExpandSearchTotal(), greaterThan(0L));
+            if (total.getCoordinatorStatsLongHolder().queryMetric > 0) {
+                assertThat(total.getCoordinatorStatsLongHolder().queryTotal, greaterThan(0L));
+                assertThat(total.getCoordinatorStatsLongHolder().fetchMetric, greaterThan(0L));
+                assertThat(total.getCoordinatorStatsLongHolder().fetchTotal, greaterThan(0L));
+                assertThat(total.getCoordinatorStatsLongHolder().expandSearchTotal, greaterThan(0L));
+                coordNumber += 1;
             }
             if (nodeIdsWithIndex.contains(stat.getNode().getId())) {
                 assertThat(total.getQueryCount(), greaterThan(0L));
                 assertThat(total.getQueryTimeInMillis(), greaterThan(0L));
                 num++;
-
             } else {
                 assertThat(total.getQueryCount(), equalTo(0L));
                 assertThat(total.getQueryTimeInMillis(), equalTo(0L));
             }
         }
-
+        assertThat(coordNumber, greaterThan(0));
         assertThat(num, greaterThan(0));
 
     }

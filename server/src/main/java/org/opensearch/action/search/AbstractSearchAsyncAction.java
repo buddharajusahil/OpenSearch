@@ -445,7 +445,9 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             searchRequestOperationsListener.onDFSPreQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
         } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
             searchRequestOperationsListener.onCanMatchPhaseEnd(searchPhaseContext, tookTimeInMillis);
-        } else if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
+        } else if (searchPhaseContext.getCurrentPhase() instanceof DfsQueryPhase) {
+            searchRequestOperationsListener.onQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
+        }else if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseEnd(searchPhaseContext, tookTimeInMillis);
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
             searchRequestOperationsListener.onFetchPhaseEnd(searchPhaseContext, tookTimeInMillis);
@@ -464,6 +466,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
             searchRequestOperationsListener.onDFSPreQueryPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof CanMatchPreFilterSearchPhase) {
             searchRequestOperationsListener.onCanMatchPhaseStart(searchPhaseContext);
+        } else if (searchPhaseContext.getCurrentPhase() instanceof DfsQueryPhase) {
+            searchRequestOperationsListener.onQueryPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof SearchQueryThenFetchAsyncAction) {
             searchRequestOperationsListener.onQueryPhaseStart(searchPhaseContext);
         } else if (searchPhaseContext.getCurrentPhase() instanceof FetchSearchPhase) {
@@ -728,6 +732,8 @@ abstract class AbstractSearchAsyncAction<Result extends SearchPhaseResult> exten
                 searchRequestOperationsListener.onDFSPreQueryPhaseFailure(this);
             } else if (this.currentPhase instanceof CanMatchPreFilterSearchPhase) {
                 searchRequestOperationsListener.onCanMatchPhaseFailure(this);
+            } else if (this.currentPhase instanceof DfsQueryPhase) {
+                searchRequestOperationsListener.onQueryPhaseFailure(this);
             } else if (this.currentPhase instanceof SearchQueryThenFetchAsyncAction) {
                 searchRequestOperationsListener.onQueryPhaseFailure(this);
             } else if (this.currentPhase instanceof FetchSearchPhase) {
