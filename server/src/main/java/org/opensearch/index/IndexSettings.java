@@ -588,6 +588,23 @@ public final class IndexSettings {
         Property.IndexScope
     );
 
+    public static final Setting<Boolean> INDEX_CONCURRENT_SEGMENT_SEARCH_SETTING = Setting.boolSetting(
+        "index.search.concurrent_segment_search.enabled",
+        false,
+        Property.IndexScope,
+        Property.Dynamic
+    );
+
+    public static final TimeValue DEFAULT_REMOTE_TRANSLOG_BUFFER_INTERVAL = new TimeValue(650, TimeUnit.MILLISECONDS);
+    public static final TimeValue MINIMUM_REMOTE_TRANSLOG_BUFFER_INTERVAL = TimeValue.ZERO;
+    public static final Setting<TimeValue> INDEX_REMOTE_TRANSLOG_BUFFER_INTERVAL_SETTING = Setting.timeSetting(
+        "index.remote_store.translog.buffer_interval",
+        DEFAULT_REMOTE_TRANSLOG_BUFFER_INTERVAL,
+        MINIMUM_REMOTE_TRANSLOG_BUFFER_INTERVAL,
+        Property.Dynamic,
+        Property.IndexScope
+    );
+
     private final Index index;
     private final Version version;
     private final Logger logger;
@@ -597,7 +614,7 @@ public final class IndexSettings {
     private final ReplicationType replicationType;
     private final boolean isRemoteStoreEnabled;
     private final boolean isRemoteTranslogStoreEnabled;
-    private final TimeValue remoteTranslogUploadBufferInterval;
+    private volatile TimeValue remoteTranslogUploadBufferInterval;
     private final String remoteStoreTranslogRepository;
     private final String remoteStoreRepository;
     private final boolean isRemoteSnapshot;
@@ -665,6 +682,7 @@ public final class IndexSettings {
     private volatile long mappingTotalFieldsLimit;
     private volatile long mappingDepthLimit;
     private volatile long mappingFieldNameLengthLimit;
+    private volatile boolean searchSegmentOrderReversed;
 
     /**
      * The maximum number of refresh listeners allows on this shard.
@@ -767,10 +785,7 @@ public final class IndexSettings {
         isRemoteStoreEnabled = settings.getAsBoolean(IndexMetadata.SETTING_REMOTE_STORE_ENABLED, false);
         isRemoteTranslogStoreEnabled = settings.getAsBoolean(IndexMetadata.SETTING_REMOTE_TRANSLOG_STORE_ENABLED, false);
         remoteStoreTranslogRepository = settings.get(IndexMetadata.SETTING_REMOTE_TRANSLOG_STORE_REPOSITORY);
-        remoteTranslogUploadBufferInterval = settings.getAsTime(
-            IndexMetadata.SETTING_REMOTE_TRANSLOG_BUFFER_INTERVAL,
-            TimeValue.timeValueMillis(100)
-        );
+        remoteTranslogUploadBufferInterval = INDEX_REMOTE_TRANSLOG_BUFFER_INTERVAL_SETTING.get(settings);
         remoteStoreRepository = settings.get(IndexMetadata.SETTING_REMOTE_STORE_REPOSITORY);
         isRemoteSnapshot = IndexModule.Type.REMOTE_SNAPSHOT.match(this.settings);
 
@@ -903,6 +918,14 @@ public final class IndexSettings {
         scopedSettings.addSettingsUpdateConsumer(INDEX_MERGE_ON_FLUSH_ENABLED, this::setMergeOnFlushEnabled);
         scopedSettings.addSettingsUpdateConsumer(INDEX_MERGE_ON_FLUSH_POLICY, this::setMergeOnFlushPolicy);
         scopedSettings.addSettingsUpdateConsumer(DEFAULT_SEARCH_PIPELINE, this::setDefaultSearchPipeline);
+        scopedSettings.addSettingsUpdateConsumer(
+            INDEX_REMOTE_TRANSLOG_BUFFER_INTERVAL_SETTING,
+            this::setRemoteTranslogUploadBufferInterval
+        );
+    }
+
+    private void setSearchSegmentOrderReversed(boolean reversed) {
+        this.searchSegmentOrderReversed = reversed;
     }
 
     private void setSearchIdleAfter(TimeValue searchIdleAfter) {
@@ -1085,6 +1108,13 @@ public final class IndexSettings {
     }
 
     /**
+     * Returns true if index level setting for leaf reverse order search optimization is enabled
+     */
+    public boolean getSearchSegmentOrderReversed() {
+        return this.searchSegmentOrderReversed;
+    }
+
+    /**
      * Updates the settings and index metadata and notifies all registered settings consumers with the new settings iff at least one
      * setting has changed.
      *
@@ -1170,6 +1200,10 @@ public final class IndexSettings {
      */
     public TimeValue getRemoteTranslogUploadBufferInterval() {
         return remoteTranslogUploadBufferInterval;
+    }
+
+    public void setRemoteTranslogUploadBufferInterval(TimeValue remoteTranslogUploadBufferInterval) {
+        this.remoteTranslogUploadBufferInterval = remoteTranslogUploadBufferInterval;
     }
 
     /**
@@ -1590,7 +1624,13 @@ public final class IndexSettings {
         if (FeatureFlags.isEnabled(SEARCH_PIPELINE)) {
             this.defaultSearchPipeline = defaultSearchPipeline;
         } else {
-            throw new SettingsException("Unsupported setting: " + DEFAULT_SEARCH_PIPELINE.getKey());
+            throw new SettingsException(
+                "Unable to update setting: "
+                    + DEFAULT_SEARCH_PIPELINE.getKey()
+                    + ". This is an experimental feature that is currently disabled, please enable the "
+                    + SEARCH_PIPELINE
+                    + " feature flag first."
+            );
         }
     }
 }
