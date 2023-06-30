@@ -1837,7 +1837,8 @@ public class SnapshotResiliencyTests extends OpenSearchTestCase {
                     emptyMap(),
                     new RemoteSegmentStoreDirectoryFactory(() -> repositoriesService),
                     repositoriesServiceReference::get,
-                    fileCacheCleaner
+                    fileCacheCleaner,
+                    null
                 );
                 final RecoverySettings recoverySettings = new RecoverySettings(settings, clusterSettings);
                 snapshotShardsService = new SnapshotShardsService(
@@ -2065,7 +2066,8 @@ public class SnapshotResiliencyTests extends OpenSearchTestCase {
                             List.of(),
                             client,
                             false
-                        )
+                        ),
+                        null
                     )
                 );
                 actions.put(

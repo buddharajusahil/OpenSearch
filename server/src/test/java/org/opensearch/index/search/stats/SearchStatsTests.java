@@ -32,6 +32,7 @@
 
 package org.opensearch.index.search.stats;
 
+import org.opensearch.action.search.SearchCoordinatorStats;
 import org.opensearch.index.search.stats.SearchStats.Stats;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -63,6 +64,30 @@ public class SearchStatsTests extends OpenSearchTestCase {
         // adding again would then return wrong search stats (would return 4! instead of 3)
         searchStats1.add(searchStats2);
         assertStats(groupStats1.get("group1"), 3);
+
+        long paramValue = 1;
+
+        // Testing for coordinator stats
+        SearchCoordinatorStats testCoordinatorStats = new SearchCoordinatorStats();
+        testCoordinatorStats.totalStats.dfsPreQueryMetric.setSum(paramValue);
+        testCoordinatorStats.totalStats.dfsPreQueryCurrent.setCount(paramValue);
+        testCoordinatorStats.totalStats.dfsPreQueryTotal.setCount(paramValue);
+        testCoordinatorStats.totalStats.canMatchMetric.setSum(paramValue);
+        testCoordinatorStats.totalStats.canMatchCurrent.setCount(paramValue);
+        testCoordinatorStats.totalStats.canMatchTotal.setCount(paramValue);
+        testCoordinatorStats.totalStats.queryMetric.setSum(paramValue);
+        testCoordinatorStats.totalStats.queryCurrent.setCount(paramValue);
+        testCoordinatorStats.totalStats.queryTotal.setCount(paramValue);
+        testCoordinatorStats.totalStats.fetchMetric.setSum(paramValue);
+        testCoordinatorStats.totalStats.fetchCurrent.setCount(paramValue);
+        testCoordinatorStats.totalStats.fetchTotal.setCount(paramValue);
+        testCoordinatorStats.totalStats.expandSearchMetric.setSum(paramValue);
+        testCoordinatorStats.totalStats.expandSearchCurrent.setCount(paramValue);
+        testCoordinatorStats.totalStats.expandSearchTotal.setCount(paramValue);
+
+        searchStats1.setSearchCoordinatorStats(testCoordinatorStats);
+        assertCoordinatorStats(searchStats1.getTotal(), 1);
+
     }
 
     private static void assertStats(Stats stats, long equalTo) {
@@ -81,6 +106,24 @@ public class SearchStatsTests extends OpenSearchTestCase {
         assertEquals(equalTo, stats.getSuggestCount());
         assertEquals(equalTo, stats.getSuggestTimeInMillis());
         assertEquals(equalTo, stats.getSuggestCurrent());
+    }
+
+    private static void assertCoordinatorStats(Stats stats, long equalTo) {
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getDFSPreQueryMetric());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getDFSPreQueryCurrent());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getDFSPreQueryTotal());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getCanMatchMetric());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getCanMatchCurrent());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getCanMatchTotal());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getQueryMetric());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getQueryCurrent());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getQueryTotal());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getFetchMetric());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getFetchCurrent());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getFetchTotal());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getExpandSearchMetric());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getExpandSearchCurrent());
+        assertEquals(equalTo, stats.getSearchCoordinatorStats().getExpandSearchTotal());
     }
 
 }
