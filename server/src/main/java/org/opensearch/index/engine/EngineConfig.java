@@ -33,6 +33,7 @@ package org.opensearch.index.engine;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.codecs.Codec;
+import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.search.QueryCache;
 import org.apache.lucene.search.QueryCachingPolicy;
@@ -59,6 +60,7 @@ import org.opensearch.indices.IndexingMemoryController;
 import org.opensearch.indices.breaker.CircuitBreakerService;
 import org.opensearch.threadpool.ThreadPool;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
@@ -102,6 +104,7 @@ public final class EngineConfig {
     private final Supplier<RetentionLeases> retentionLeasesSupplier;
     private final boolean isReadOnlyReplica;
     private final BooleanSupplier primaryModeSupplier;
+    private final Comparator<LeafReader> leafSorter;
 
     /**
      * A supplier of the outstanding retention leases. This is used during merged operations to determine which operations that have been
@@ -126,12 +129,14 @@ public final class EngineConfig {
         switch (s) {
             case "default":
             case "best_compression":
+            case "zstd":
+            case "zstd_no_dict":
             case "lucene_default":
                 return s;
             default:
                 if (Codec.availableCodecs().contains(s) == false) { // we don't error message the not officially supported ones
                     throw new IllegalArgumentException(
-                        "unknown value for [index.codec] must be one of [default, best_compression] but was: " + s
+                        "unknown value for [index.codec] must be one of [default, best_compression, zstd, zstd_no_dict] but was: " + s
                     );
                 }
                 return s;
@@ -204,6 +209,7 @@ public final class EngineConfig {
         this.isReadOnlyReplica = builder.isReadOnlyReplica;
         this.primaryModeSupplier = builder.primaryModeSupplier;
         this.translogFactory = builder.translogFactory;
+        this.leafSorter = builder.leafSorter;
     }
 
     /**
@@ -452,6 +458,15 @@ public final class EngineConfig {
     }
 
     /**
+     * Returns subReaderSorter for org.apache.lucene.index.BaseCompositeReader.
+     * This gets used in lucene IndexReader and decides order of segment read.
+     * @return comparator
+     */
+    public Comparator<LeafReader> getLeafSorter() {
+        return this.leafSorter;
+    }
+
+    /**
      * Builder for EngineConfig class
      *
      * @opensearch.internal
@@ -483,6 +498,7 @@ public final class EngineConfig {
         private boolean isReadOnlyReplica;
         private BooleanSupplier primaryModeSupplier;
         private TranslogFactory translogFactory = new InternalTranslogFactory();
+        Comparator<LeafReader> leafSorter;
 
         public Builder shardId(ShardId shardId) {
             this.shardId = shardId;
@@ -611,6 +627,11 @@ public final class EngineConfig {
 
         public Builder translogFactory(TranslogFactory translogFactory) {
             this.translogFactory = translogFactory;
+            return this;
+        }
+
+        public Builder leafSorter(Comparator<LeafReader> leafSorter) {
+            this.leafSorter = leafSorter;
             return this;
         }
 
